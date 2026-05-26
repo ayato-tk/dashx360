@@ -13,6 +13,16 @@ https://Ko-fi.com/zivvoz
 4. Use the Back + Start buttons together (or Win + Left Shift + Left Ctrl) to open the Guide.
 5. Navigate with the controller just like the original Xbox 360 dashboard.
 
+6. ## Version 1.1 New Features
+
+- Custom theme support, and the Bing Penguins are Back!
+- Library Scan for Steam, and uses coverart steam provides
+- Import and Export for user data for transfer or version updating
+- minor bugfixes with the guide and music player
+- reduced size from around 100mb to 50mb
+- optimized program
+    -my ram usage went from 800-1000mb to 200-400mb
+
 ## Features
 
 * Functional Home menu
@@ -29,15 +39,6 @@ https://Ko-fi.com/zivvoz
 * Change Home tile artwork in Settings
 * Controller-friendly navigation
 * Xbox 360-inspired UI and layout
-
-## Working on the Project
-
-DashX360 is open for people who want to help improve it.
-If you use this project, modify it, or build on top of it, please credit the original project and creator:
-
-**Original project by zivvoz / DashX360**
-
-You are free to modify, experiment with, or build on DashX360, but please credit ZivvoZ as the original creator if you share your version publicly.
 
 ## Legal Notice
 
@@ -57,3 +58,5 @@ You are free to modify, experiment with, or build on DashX360, but please credit
 ## Credits
 
 Inspired by the Xbox 360 dashboard by Microsoft.
+
+You are free to modify, experiment with, or build on DashX360, but please credit ZivvoZ as the original creator if you share your version publicly.
