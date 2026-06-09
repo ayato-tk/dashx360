@@ -1,62 +1,63 @@
-# DashX360, an Xbox 360 Metro Dashboard for Windows
+# DashX360 Source Code
 
-The first fanmade recreation of the Xbox 360 metro dashboard experience for Windows with controller support, working menus, and an in-game Guide overlay.
+DashX360 is a fan-made Windows recreation of the Xbox 360 Metro dashboard, with tile navigation, controller support, Guide overlays, local profile data, custom themes, boot media, and dashboard audio cues.
 
-If you like my work, feel free to donate to my ko-fi! however money will never be needed to use this!
-https://Ko-fi.com/zivvoz
+Original app credit: ZivvoZ  
+https://youtube.com/@zivvoz
 
-## How to Use
+## Source Status
 
-1. Launch the application.
-2. Connect your controller.
-3. In Steam, turn off **Enable Guide Button Chords for controllers**.
-4. Use the Back + Start buttons together (or Win + Left Shift + Left Ctrl) to open the Guide.
-5. Navigate with the controller just like the original Xbox 360 dashboard.
+This repository contains recovered/decompiled C# source from the DashX360 V1.1 Windows build. It has been lightly cleaned so the project can build, but it is not the original hand-authored source tree.
 
-## Version 1.1 New Features
-
-- Custom theme support, and the Bing Penguins are Back!
-- Library Scan for Steam, and uses coverart steam provides
-- Import and Export for user data for transfer or version updating
-- minor bugfixes with the guide and music player
-- reduced size from around 100mb to 50mb
-- optimized program
-    -my ram usage went from 800-1000mb to 200-400mb
+Because this source was recovered from a published build, some files still reflect decompiler output, including generated helper classes, `.baml` resources instead of original `.xaml`, and compiler-style control flow in some methods.
 
 ## Features
 
-* Functional Home menu
-* Top tabs: Bing, Home, Social, Video, Games, Music, Apps, Settings
-* Bing search tab
-* Games menu
-* Music app (lacks visualizer)
-* Settings menu
-* Functional Xbox Guide overlay
-* Guide can be opened while a game is running and the dashboard is minimized
-* Open Tray option launches a selected game like a disc was inserted
-* Change which game appears in Open Tray through Settings
-* Change game cover art in Settings
-* Change Home tile artwork in Settings
-* Controller-friendly navigation
-* Xbox 360-inspired UI and layout
+- Xbox 360-inspired dashboard tabs for games, apps, music, video, social, and settings
+- Controller-first navigation with keyboard and mouse support
+- Xbox Guide overlay with Friends, Party, Profile, and search screens
+- Local profile and friend data with cached gamer pictures
+- Boot video, dashboard audio cues, and Metro-style tile presentation
+- Custom theme support
+- Steam library scanning with Steam-provided cover art
+- Import/export support for user data transfer and version updates
 
-## Legal Notice
+## Building
 
-* This is an unofficial fan-made project created for nostalgia and educational purposes.
-* Xbox, Xbox 360, and related names, logos, and designs are property of Microsoft.
-* No affiliation with or endorsement by Microsoft is claimed or implied.
-* This project is distributed free of charge.
-* If any rights holder requests changes or removal, comply promptly.
-* Users are responsible for following local laws and platform terms when downloading or sharing.
+### Requirements
 
-## Notes
+- Windows 10 or Windows 11
+- .NET 8 SDK
+- Visual Studio 2022 or the .NET CLI
 
-* Best experienced in fullscreen.
-* Some features are still being improved.
-* This project is a fan-made recreation for nostalgia and personal use.
+### Command Line
 
-## Credits
+```powershell
+dotnet restore
+dotnet build
+```
 
-Inspired by the Xbox 360 dashboard by Microsoft.
+The project targets `net8.0-windows` and uses WPF plus Windows Forms interop.
 
-You are free to modify, experiment with, or build on DashX360, but please credit ZivvoZ as the original creator if you share your version publicly.
+## Controls
+
+- `A` / `Enter`: select
+- `B` / `Escape`: back
+- `X`: context actions where available
+- `Y`: secondary actions where available
+- Guide combo / hotkey: open the Xbox Guide overlay
+- Mouse support is available for tiles, buttons, and popup menus
+
+## Configuration Notes
+
+- Launcher settings and cached profile data are stored in the app folder at runtime.
+- Local user data, logs, and build output are ignored by git.
+- If using Steam controller input, untick `Enable Guide Button Chords for controllers` to use the guide button with this launcher.
+
+## Legal / Disclaimer
+
+This is an unofficial, non-commercial fan project. Xbox, Xbox 360, Xbox LIVE, Microsoft, and related names, logos, and imagery are property of Microsoft. This project is not affiliated with, endorsed by, or sponsored by Microsoft.
+
+Some bundled art, sounds, and reference assets may be derived from commercial software, media, or platform branding. Replace any assets you do not have the right to redistribute before publishing your own build or fork.
+
+Only publish this repository if you have the rights or permission to redistribute the recovered source and bundled assets.

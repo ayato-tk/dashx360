@@ -1,0 +1,24 @@
+bin/
+obj/
+
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+*.pdb
+*.cache
+*.log
+
+Logs/
+UserData/
+
+*.deps.json
+*.runtimeconfig.json
+
+# Keep source and project files in git, but do not commit compiled release binaries.
+*.exe
+*.dll
+!app.ico
