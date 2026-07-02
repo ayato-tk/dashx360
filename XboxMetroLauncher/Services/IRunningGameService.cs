@@ -1,28 +1,29 @@
-using System;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using XboxMetroLauncher.Models;
 
 namespace XboxMetroLauncher.Services;
 
 public interface IRunningGameService
 {
-	bool HasRunningGame { get; }
+    event EventHandler? StateChanged;
 
-	bool HasTrackedProcess { get; }
+    bool HasRunningGame { get; }
 
-	string RunningGameTitle { get; }
+    bool HasTrackedProcess { get; }
 
-	RunningGameState State { get; }
+    string RunningGameTitle { get; }
 
-	event EventHandler? StateChanged;
+    RunningGameState State { get; }
 
-	void BeginLaunch(GameMetadata game, DateTimeOffset launchedAt);
+    GameMetadata? CurrentGame { get; }
 
-	void Track(GameMetadata game, Process? process);
+    bool ConsumePlaytimeUpdate();
 
-	void Clear();
+    void BeginLaunch(GameMetadata game, DateTimeOffset launchedAt);
 
-	Task<RunningGameCloseResult> CloseAsync(bool forceKill, CancellationToken cancellationToken = default(CancellationToken));
+    void Track(GameMetadata game, Process? process);
+
+    void Clear();
+
+    Task<RunningGameCloseResult> CloseAsync(bool forceKill, CancellationToken cancellationToken = default);
 }

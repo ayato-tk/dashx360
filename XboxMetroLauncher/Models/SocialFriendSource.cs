@@ -2,7 +2,7 @@ namespace XboxMetroLauncher.Models;
 
 public enum SocialFriendSource
 {
-	Local,
-	Discord,
-	Steam
+    Local,
+    Discord,
+    Steam
 }

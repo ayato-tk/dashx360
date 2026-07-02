@@ -4,12 +4,9 @@ namespace XboxMetroLauncher.Services;
 
 public sealed class GameLaunchResult
 {
-	public Process? TrackedProcess { get; init; }
+    public static GameLaunchResult Untracked() => new();
 
-	public bool IsTracked => TrackedProcess != null;
+    public Process? TrackedProcess { get; init; }
 
-	public static GameLaunchResult Untracked()
-	{
-		return new GameLaunchResult();
-	}
+    public bool IsTracked => TrackedProcess is not null;
 }

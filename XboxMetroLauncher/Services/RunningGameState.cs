@@ -2,8 +2,8 @@ namespace XboxMetroLauncher.Services;
 
 public enum RunningGameState
 {
-	None,
-	Launching,
-	Tracked,
-	ProcessNotDetected
+    None,
+    Launching,
+    Tracked,
+    ProcessNotDetected
 }

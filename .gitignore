@@ -1,24 +1,39 @@
+# Build output
 bin/
 obj/
-
 .vs/
-.vscode/
+artifacts/
+publish/
+
+# Local release folders
+Build/XboxMetroLauncher/
+Build/**/*.exe
+Build/**/*.dll
+Build/**/*.pdb
+
+# Logs and diagnostics
+*.log
+logs/
+Logs/
+discord-social-debug.log
+
+# User and machine-local data
+UserData/
 *.user
 *.suo
-*.userosscache
-*.sln.docstates
-
-*.pdb
 *.cache
-*.log
+Thumbs.db
+Desktop.ini
 
-Logs/
-UserData/
+# IDE noise
+.idea/
+.vscode/
+*.tmp
+*.bak
+*.orig
 
-*.deps.json
-*.runtimeconfig.json
-
-# Keep source and project files in git, but do not commit compiled release binaries.
-*.exe
-*.dll
-!app.ico
+# Local secrets/config overrides
+appsettings.Local.json
+appsettings.Development.json
+*.secrets.json
+steam-web-config.json

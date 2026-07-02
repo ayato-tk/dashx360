@@ -2,41 +2,34 @@ namespace XboxMetroLauncher.Models;
 
 public sealed class SocialFriend
 {
-	public required string Id { get; init; }
+    public required string Id { get; init; }
 
-	public required string DisplayName { get; init; }
+    public required string DisplayName { get; init; }
 
-	public SocialFriendSource Source { get; init; }
+    public SocialFriendSource Source { get; init; }
 
-	public string AvatarPathOrUrl { get; init; } = string.Empty;
+    public string AvatarPathOrUrl { get; init; } = string.Empty;
 
-	public bool IsOnline { get; init; }
+    public bool IsOnline { get; init; }
 
-	public string StatusText { get; init; } = string.Empty;
+    public string StatusText { get; init; } = string.Empty;
 
-	public string ActivityText { get; init; } = string.Empty;
+    public string ActivityText { get; init; } = string.Empty;
 
-	public string GamerscoreText { get; init; } = string.Empty;
+    public string ActivityAppId { get; init; } = string.Empty;
 
-	public string ReputationText { get; init; } = string.Empty;
+    public string GamerscoreText { get; init; } = string.Empty;
 
-	public string ZoneText { get; init; } = string.Empty;
+    public string ReputationText { get; init; } = string.Empty;
 
-	public string IdentityDetailText { get; init; } = string.Empty;
+    public string ZoneText { get; init; } = string.Empty;
 
-	public bool IsPartyHost { get; init; }
+    public string IdentityDetailText { get; init; } = string.Empty;
 
-	public bool ShowVoiceIndicator { get; init; } = true;
+    public bool IsPartyHost { get; init; }
 
-	public string CurrentActivityText
-	{
-		get
-		{
-			if (!string.IsNullOrWhiteSpace(ActivityText))
-			{
-				return ActivityText;
-			}
-			return StatusText;
-		}
-	}
+    public bool ShowVoiceIndicator { get; init; } = true;
+
+    public string CurrentActivityText
+        => string.IsNullOrWhiteSpace(ActivityText) ? StatusText : ActivityText;
 }

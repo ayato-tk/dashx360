@@ -1,93 +1,64 @@
-# DashX360
+# DashX360 V1.2 Source Code
 
-**An Xbox 360 Metro Dashboard recreation for Windows**
+DashX360 is a fan-made Windows recreation of the Xbox 360 Metro dashboard, with tile navigation, controller support, Guide overlays, local profile data, custom themes, boot media, and dashboard audio cues.
 
-DashX360 is a the first fanmade recreation of the Xbox 360 metro dashboard experience for Windows with controller support, working menus, and an in-game Guide overlay.
+Original app credit: ZivvoZ
+https://youtube.com/@zivvoz
 
-> If you like my work, feel free to donate to my ko-fi! however money will never be needed to use this!
+## Source Status
 
-Support the project on Ko-fi:
-[ko-fi.com/zivvoz](https://ko-fi.com/zivvoz)
+This repository contains the DashX360 V1.2 public source tree. Unlike the earlier V1.1 recovered source snapshot, this version uses the normal WPF source layout with `.xaml` views, `.cs` code-behind, services, models, view models, and supporting assets.
 
----
+Local build output, logs, user data, machine-specific settings, and private configuration files are ignored by git.
 
 ## Features
 
-* Functional Xbox 360-inspired Home menu
-* Functional Xbox Guide overlay
-* Bing search and the Bing penguins are back!
-* Games and Apps libraries
-* Steam account integration
-  * Scan your Steam game library
-  * View your Steam friends list
-  * See what games your friends are currently playing
-  * View your personal Steam achievements
-* Dedicated Achievement menu
-* Custom theme support
-* Game details and playtime support
-* Music player and Music Visualizer
-* Import and export user data for transfers and version updates
-* Settings and customization menu
-* Xbox, PlayStation, and generic controller support
-* and many more features!
+- Xbox 360-inspired dashboard tabs for games, apps, music, video, social, Bing, and settings
+- Controller-first navigation with keyboard and mouse support
+- Xbox Guide overlay with Friends, Party, Profile, media controls, achievements, and search screens
+- Local profile and friend data with cached gamer pictures
+- Boot video, dashboard audio cues, and Metro-style tile presentation
+- Custom theme support
+- Steam library scanning with Steam-provided cover art
+- Import/export support for user data transfer and version updates
 
+## Building
 
----
+### Requirements
 
-## How to Use
-1. Open Steam controller settings.
-2. if using steam Disable **Enable Guide Button Chords** for the guide.
-3. Launch DashX360.
-5. Navigate the dashboard and play your favorite games in a old familiar way.
+- Windows 10 or Windows 11
+- .NET 8 SDK
+- Visual Studio 2022 or the .NET CLI
 
-### Open the Guide
+### Command Line
 
-Use either of the following shortcuts:
+```powershell
+dotnet restore XboxMetroLauncher_Public.sln
+dotnet build XboxMetroLauncher_Public.sln --configuration Release
+```
 
-| Input Method | Shortcut                             |
-| ------------ | ------------------------------------ |
-| Controller   | **Back + Start**                     |
-| Keyboard     | **Windows + Left Shift + Left Ctrl** |
+The project targets `net8.0-windows` and uses WPF plus Windows Forms interop.
 
-The Guide can also be opened while a game is running and DashX360 is minimized.
+## Controls
 
----
+- `A` / `Enter`: select
+- `B` / `Escape`: back
+- `X`: context actions where available
+- `Y`: secondary actions where available
+- Guide combo / hotkey: open the Xbox Guide overlay
+- Mouse support is available for tiles, buttons, and popup menus
 
-## Contributing
+## Configuration Notes
 
-DashX360 is open to contributors who want to help improve the project.
+- Launcher settings and cached profile data are stored locally at runtime.
+- Local user data, logs, and build output are ignored by git.
+- If using Steam controller input, untick `Enable Guide Button Chords for controllers` to use the guide button with this launcher.
+- Copy `Data\steam-web-config.example.json` or `UserData\steam-web-config.example.json` to a local `steam-web-config.json` file for Steam Web API configuration. Do not commit private keys.
 
-When modifying, building on, or using parts of DashX360, please credit the original project and creator:
+## Legal / Disclaimer
 
-**Original project by [zivvoz](https://github.com/zivvoz) / DashX360**
+This is an unofficial, non-commercial fan project. Xbox, Xbox 360, Xbox LIVE, Microsoft, and related names, logos, and imagery are property of Microsoft. This project is not affiliated with, endorsed by, or sponsored by Microsoft.
 
-Do not redistribute DashX360 or a modified version in a way that falsely suggests you created the original project.
+Some bundled art, sounds, and reference assets may be derived from commercial software, media, or platform branding. Replace any assets you do not have the right to redistribute before publishing your own build or fork.
 
----
-
-## Notes
-
-* DashX360 is best experienced in Fullscreen.
-* Some features are still being developed and improved.
-* Bugs and incomplete features may be present.
-* This project is intended for nostalgia, education, and personal use.
-
----
-
-## Legal Notice
-
-DashX360 is an unofficial, fan-made project created for educational and nostalgic purposes.
-
-* Xbox, Xbox 360, Microsoft, and all related names, trademarks, logos, artwork, sounds, and interface designs belong to their respective owners.
-* DashX360 is not affiliated with, authorized by, sponsored by, or endorsed by Microsoft.
-* This project is distributed free of charge.
-* Users are responsible for complying with applicable laws and platform terms when downloading, modifying, or sharing the project.
-* Any reasonable request from a rights holder regarding copyrighted or trademarked material will be addressed promptly.
-
----
-
-## Credits
-
-Inspired by the Xbox 360 Metro dashboard created by Microsoft.
-
-DashX360 was created by **zivvoz**.
+Only publish this repository if you have the rights or permission to redistribute the source and bundled assets.

@@ -3,51 +3,63 @@
     <AssemblyName>XboxMetroLauncher</AssemblyName>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <OutputType>WinExe</OutputType>
-    <UseWPF>True</UseWPF>
-    <UseWindowsForms>True</UseWindowsForms>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>false</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
     <PlatformTarget>x64</PlatformTarget>
-    <Nullable>annotations</Nullable>
-  </PropertyGroup>
-  <PropertyGroup>
-    <LangVersion>12.0</LangVersion>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <NoWarn>$(NoWarn);CS4014;CS0649</NoWarn>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationIcon>app.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <DebugType Condition="'$(Configuration)' == 'Release'">embedded</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Build\**;bin\**;obj\**</DefaultItemExcludes>
+    <ApplicationIcon>Assets\Misc\256x256.ico</ApplicationIcon>
     <RootNamespace />
+    <Version>1.2.0</Version>
+    <InformationalVersion>v1.2.0-public</InformationalVersion>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
+    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
+
   <ItemGroup>
-    <None Remove="views\tabs\musictabview.baml" />
-    <None Remove="themes\metrotheme.baml" />
-    <None Remove="views\tabs\mediatabview.baml" />
-    <None Remove="views\tabs\appstabview.baml" />
-    <None Remove="views\tabs\bingtabview.baml" />
-    <None Remove="views\tabs\socialtabview.baml" />
-    <None Remove="views\tabs\settingstabview.baml" />
-    <None Remove="controls\metrotile.baml" />
-    <None Remove="views\guidewindow.baml" />
-    <None Remove="mainwindow.baml" />
-    <None Remove="views\tabs\gamestabview.baml" />
-    <None Remove="app.baml" />
-    <None Remove="views\tabs\hometabview.baml" />
-    <EmbeddedResource Include="views\tabs\musictabview.baml" LogicalName="views/tabs/musictabview.baml" />
-    <EmbeddedResource Include="themes\metrotheme.baml" LogicalName="themes/metrotheme.baml" />
-    <EmbeddedResource Include="views\tabs\mediatabview.baml" LogicalName="views/tabs/mediatabview.baml" />
-    <EmbeddedResource Include="views\tabs\appstabview.baml" LogicalName="views/tabs/appstabview.baml" />
-    <EmbeddedResource Include="views\tabs\bingtabview.baml" LogicalName="views/tabs/bingtabview.baml" />
-    <EmbeddedResource Include="views\tabs\socialtabview.baml" LogicalName="views/tabs/socialtabview.baml" />
-    <EmbeddedResource Include="views\tabs\settingstabview.baml" LogicalName="views/tabs/settingstabview.baml" />
-    <EmbeddedResource Include="controls\metrotile.baml" LogicalName="controls/metrotile.baml" />
-    <EmbeddedResource Include="views\guidewindow.baml" LogicalName="views/guidewindow.baml" />
-    <EmbeddedResource Include="mainwindow.baml" LogicalName="mainwindow.baml" />
-    <EmbeddedResource Include="views\tabs\gamestabview.baml" LogicalName="views/tabs/gamestabview.baml" />
-    <EmbeddedResource Include="app.baml" LogicalName="app.baml" />
-    <EmbeddedResource Include="views\tabs\hometabview.baml" LogicalName="views/tabs/hometabview.baml" />
+    <ApplicationDefinition Include="XboxMetroLauncher\App.xaml" />
   </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="SharpDX" Version="4.2.0" />
+    <Using Include="System" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.Collections.ObjectModel" />
+    <Using Include="System.Globalization" />
+    <Using Include="System.IO" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Threading" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="SharpDX.DirectInput" Version="4.2.0" />
   </ItemGroup>
+
+  <Target Name="CopyLooseAssetsToPublishFolder" AfterTargets="Publish">
+    <ItemGroup>
+      <LooseAsset Include="Assets\**\*" />
+      <LooseData Include="Data\*.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LooseAsset)" DestinationFiles="@(LooseAsset->'$(PublishDir)Assets\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(LooseData)" DestinationFiles="@(LooseData->'$(PublishDir)Data\%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
