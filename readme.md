@@ -1,55 +1,93 @@
-DashX360, an Xbox 360 Metro Dashboard for Windows
+# DashX360
 
-The first fanmade recreation of the Xbox 360 metro dashboard experience for Windows with controller support, working menus, and an in-game Guide overlay.
+**An Xbox 360 Metro Dashboard recreation for Windows**
 
-If you like my work, feel free to donate to my ko-fi! however money will never be needed to use this! https://Ko-fi.com/zivvoz
-How to Use
+DashX360 is a the first fanmade recreation of the Xbox 360 metro dashboard experience for Windows with controller support, working menus, and an in-game Guide overlay.
 
-    Launch the application.
-    Connect your controller.
-    In Steam, turn off Enable Guide Button Chords for controllers.
-    Use the Back + Start buttons together (or Win + Left Shift + Left Ctrl) to open the Guide.
-    Navigate with the controller just like the original Xbox 360 dashboard.
+> If you like my work, feel free to donate to my ko-fi! however money will never be needed to use this!
 
-Features
+Support the project on Ko-fi:
+[ko-fi.com/zivvoz](https://ko-fi.com/zivvoz)
 
-    Functional Home menu
-    Top tabs: Bing, Home, Social, Video, Games, Music, Apps, Settings
-    Bing search tab
-    Games menu
-    Music app (lacks visualizer)
-    Settings menu
-    Functional Xbox Guide overlay
-    Guide can be opened while a game is running and the dashboard is minimized
-    Open Tray option launches a selected game like a disc was inserted
-    Change which game appears in Open Tray through Settings
-    Change game cover art in Settings
-    Change Home tile artwork in Settings
-    Controller-friendly navigation
-    Xbox 360-inspired UI and layout
+---
 
-Working on the Project
+## Features
 
-DashX360 is open for people who want to help improve it. If you use this project, modify it, or build on top of it, please credit the original project and creator:
+* Functional Xbox 360-inspired Home menu
+* Functional Xbox Guide overlay
+* Bing search and the Bing penguins are back!
+* Games and Apps libraries
+* Steam account integration
+  * Scan your Steam game library
+  * View your Steam friends list
+  * See what games your friends are currently playing
+  * View your personal Steam achievements
+* Dedicated Achievement menu
+* Custom theme support
+* Game details and playtime support
+* Music player and Music Visualizer
+* Import and export user data for transfers and version updates
+* Settings and customization menu
+* Xbox, PlayStation, and generic controller support
+* and many more features!
 
-Original project by zivvoz / DashX360
 
-Do not reupload or redistribute modified versions in a way that makes it look like you created the original project from scratch.
-Legal Notice
+---
 
-    This is an unofficial fan-made project created for nostalgia and educational purposes.
-    Xbox, Xbox 360, and related names, logos, and designs are property of Microsoft.
-    No affiliation with or endorsement by Microsoft is claimed or implied.
-    This project is distributed free of charge.
-    If any rights holder requests changes or removal, comply promptly.
-    Users are responsible for following local laws and platform terms when downloading or sharing.
+## How to Use
+1. Open Steam controller settings.
+2. if using steam Disable **Enable Guide Button Chords** for the guide.
+3. Launch DashX360.
+5. Navigate the dashboard and play your favorite games in a old familiar way.
 
-Notes
+### Open the Guide
 
-    Best experienced in fullscreen.
-    Some features are still being improved.
-    This project is a fan-made recreation for nostalgia and personal use.
+Use either of the following shortcuts:
 
-Credits
+| Input Method | Shortcut                             |
+| ------------ | ------------------------------------ |
+| Controller   | **Back + Start**                     |
+| Keyboard     | **Windows + Left Shift + Left Ctrl** |
 
-Inspired by the Xbox 360 dashboard by Microsoft.
+The Guide can also be opened while a game is running and DashX360 is minimized.
+
+---
+
+## Contributing
+
+DashX360 is open to contributors who want to help improve the project.
+
+When modifying, building on, or using parts of DashX360, please credit the original project and creator:
+
+**Original project by [zivvoz](https://github.com/zivvoz) / DashX360**
+
+Do not redistribute DashX360 or a modified version in a way that falsely suggests you created the original project.
+
+---
+
+## Notes
+
+* DashX360 is best experienced in Fullscreen.
+* Some features are still being developed and improved.
+* Bugs and incomplete features may be present.
+* This project is intended for nostalgia, education, and personal use.
+
+---
+
+## Legal Notice
+
+DashX360 is an unofficial, fan-made project created for educational and nostalgic purposes.
+
+* Xbox, Xbox 360, Microsoft, and all related names, trademarks, logos, artwork, sounds, and interface designs belong to their respective owners.
+* DashX360 is not affiliated with, authorized by, sponsored by, or endorsed by Microsoft.
+* This project is distributed free of charge.
+* Users are responsible for complying with applicable laws and platform terms when downloading, modifying, or sharing the project.
+* Any reasonable request from a rights holder regarding copyrighted or trademarked material will be addressed promptly.
+
+---
+
+## Credits
+
+Inspired by the Xbox 360 Metro dashboard created by Microsoft.
+
+DashX360 was created by **zivvoz**.
