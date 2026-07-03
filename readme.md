@@ -1,15 +1,11 @@
-# DashX360 V1.2 Source Code
+# DashX360, an Xbox 360 Metro Dashboard for Windows
 
-DashX360 is a fan-made Windows recreation of the Xbox 360 Metro dashboard, with tile navigation, controller support, Guide overlays, local profile data, custom themes, boot media, and dashboard audio cues.
+The first fanmade recreation of the Xbox 360 metro dashboard experience for Windows with tile navigation, controller support, Guide overlays, local profile data, custom themes, boot media, and dashboard audio cues.
+
+If you like my work, feel free to donate to my ko-fi! however money will never be needed to use this! https://Ko-fi.com/zivvoz
 
 Original app credit: ZivvoZ
 https://youtube.com/@zivvoz
-
-## Source Status
-
-This repository contains the DashX360 V1.2 public source tree. Unlike the earlier V1.1 recovered source snapshot, this version uses the normal WPF source layout with `.xaml` views, `.cs` code-behind, services, models, view models, and supporting assets.
-
-Local build output, logs, user data, machine-specific settings, and private configuration files are ignored by git.
 
 ## Features
 
@@ -22,22 +18,26 @@ Local build output, logs, user data, machine-specific settings, and private conf
 - Steam library scanning with Steam-provided cover art
 - Import/export support for user data transfer and version updates
 
-## Building
+## How to Use
+1. Launch the application.
+2. Connect your controller.
+3. In Steam, turn off Enable Guide Button Chords for controllers.
+4. Use the Back + Start buttons together (or Win + Left Shift + Left Ctrl) to open the Guide.
+5. Navigate with the controller just like the original Xbox 360 dashboard.
+
 
 ### Requirements
 
+- Untick `Enable Guide Button Chords for controllers` to use the guide if using steam
 - Windows 10 or Windows 11
-- .NET 8 SDK
-- Visual Studio 2022 or the .NET CLI
 
-### Command Line
+### Working on the Project
 
-```powershell
-dotnet restore XboxMetroLauncher_Public.sln
-dotnet build XboxMetroLauncher_Public.sln --configuration Release
-```
+DashX360 is open for people who want to help improve it. If you use this project, modify it, or build on top of it, please credit the original project and creator:
 
-The project targets `net8.0-windows` and uses WPF plus Windows Forms interop.
+Original project by zivvoz / DashX360
+
+Do not reupload or redistribute modified versions in a way that makes it look like you created the original project from scratch.
 
 ## Controls
 
@@ -45,20 +45,10 @@ The project targets `net8.0-windows` and uses WPF plus Windows Forms interop.
 - `B` / `Escape`: back
 - `X`: context actions where available
 - `Y`: secondary actions where available
-- Guide combo / hotkey: open the Xbox Guide overlay
+- Win + Ctrl + Shift / Back + Start : open the Xbox Guide overlay
 - Mouse support is available for tiles, buttons, and popup menus
-
-## Configuration Notes
-
-- Launcher settings and cached profile data are stored locally at runtime.
-- Local user data, logs, and build output are ignored by git.
-- If using Steam controller input, untick `Enable Guide Button Chords for controllers` to use the guide button with this launcher.
-- Copy `Data\steam-web-config.example.json` or `UserData\steam-web-config.example.json` to a local `steam-web-config.json` file for Steam Web API configuration. Do not commit private keys.
 
 ## Legal / Disclaimer
 
 This is an unofficial, non-commercial fan project. Xbox, Xbox 360, Xbox LIVE, Microsoft, and related names, logos, and imagery are property of Microsoft. This project is not affiliated with, endorsed by, or sponsored by Microsoft.
 
-Some bundled art, sounds, and reference assets may be derived from commercial software, media, or platform branding. Replace any assets you do not have the right to redistribute before publishing your own build or fork.
-
-Only publish this repository if you have the rights or permission to redistribute the source and bundled assets.
