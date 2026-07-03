@@ -46,7 +46,6 @@ Do not reupload or redistribute modified versions in a way that makes it look li
 - `X`: context actions where available
 - `Y`: secondary actions where available
 - Win + Ctrl + Shift / Back + Start : open the Xbox Guide overlay
-- Mouse support is available for tiles, buttons, and popup menus
 
 ## Legal / Disclaimer
 
