@@ -8,15 +8,18 @@ public sealed class SocialIntegrationManager
     private readonly IFriendsService _friendsService;
     private readonly LocalSocialIntegrationService _localService;
     private readonly ISteamCommunityService _steamCommunityService;
+    private readonly DiscordSocialService _discordSocialService;
 
     public SocialIntegrationManager(
         IFriendsService friendsService,
         LocalSocialIntegrationService localService,
-        ISteamCommunityService steamCommunityService)
+        ISteamCommunityService steamCommunityService,
+        DiscordSocialService discordSocialService)
     {
         _friendsService = friendsService;
         _localService = localService;
         _steamCommunityService = steamCommunityService;
+        _discordSocialService = discordSocialService;
     }
 
     public async Task<SocialFriendsLoadResult> LoadFriendsAsync(
@@ -33,6 +36,16 @@ public sealed class SocialIntegrationManager
             var steamFriends = await _steamCommunityService.LoadFriendsAsync(cancellationToken).ConfigureAwait(false);
             friends.AddRange(steamFriends);
             popup = _steamCommunityService.LastStatusMessage;
+        }
+
+        if (_discordSocialService.IsSessionActive)
+        {
+            var discordFriends = await _discordSocialService.LoadFriendsAsync(cancellationToken).ConfigureAwait(false);
+            friends.AddRange(discordFriends);
+            if (string.IsNullOrWhiteSpace(popup))
+            {
+                popup = _discordSocialService.LastStatusMessage;
+            }
         }
 
         return new SocialFriendsLoadResult
@@ -73,11 +86,7 @@ public sealed class SocialIntegrationManager
     }
 
     public Task<SocialConnectionResult> ConnectDiscordAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(new SocialConnectionResult
-        {
-            State = DiscordConnectionState.NotImplemented,
-            PopupMessage = "Discord is not available in the public build."
-        });
+        => _discordSocialService.ConnectAsync(cancellationToken);
 
     public async Task AddLocalFriendAsync(SocialFriend friend, CancellationToken cancellationToken = default)
     {
@@ -113,6 +122,7 @@ public sealed class SocialIntegrationManager
                 AddToPartyList = false,
                 PopupMessage = "Steam friends are read-only in this launcher."
             }),
+            SocialFriendSource.Discord => _discordSocialService.InviteToPartyAsync(friend, cancellationToken),
             _ => Task.FromResult(new SocialPartyInviteResult
             {
                 AddToPartyList = false,
@@ -129,18 +139,50 @@ public sealed class SocialIntegrationManager
             _ => "Local"
         };
 
-    public bool IsDiscordFriendAccessAvailable => false;
+    public event Action? DiscordFriendsUpdated
+    {
+        add => _discordSocialService.FriendsUpdated += value;
+        remove => _discordSocialService.FriendsUpdated -= value;
+    }
 
-    public async Task<SocialConnectionResult> RestoreDiscordSessionAsync(
-        string tokenTypeName,
-        string accessToken,
-        string grantedScopes,
+    public event Action<ulong>? DiscordDirectMessageReceived
+    {
+        add => _discordSocialService.DirectMessageReceived += value;
+        remove => _discordSocialService.DirectMessageReceived -= value;
+    }
+
+    public IReadOnlyList<DiscordDmMessage> GetDiscordDirectMessages(ulong userId)
+        => _discordSocialService.GetDirectMessages(userId);
+
+    public Task<(bool Success, string ErrorMessage)> SendDiscordDirectMessageAsync(
+        ulong userId,
+        string content,
         CancellationToken cancellationToken = default)
-        => await Task.FromResult(new SocialConnectionResult
-        {
-            State = DiscordConnectionState.NotImplemented,
-            PopupMessage = "Discord is not available in the public build."
-        }).ConfigureAwait(false);
+        => _discordSocialService.SendDirectMessageAsync(userId, content, cancellationToken);
+
+    public bool IsDiscordFriendAccessAvailable => _discordSocialService.IsSessionActive;
+
+    public bool IsDiscordConfigured => _discordSocialService.IsConfigured;
+
+    public bool IsDiscordSessionActive => _discordSocialService.IsSessionActive;
+
+    public string DiscordApplicationId => _discordSocialService.ConfiguredApplicationId;
+
+    public string DiscordBotToken => _discordSocialService.ConfiguredBotToken;
+
+    public void SaveDiscordConfig(string applicationId, string botToken)
+        => _discordSocialService.SaveConfig(applicationId, botToken);
+
+    public Task<IReadOnlyList<DiscordProfileBadge>> GetDiscordUserBadgesAsync(ulong userId, CancellationToken cancellationToken = default)
+        => _discordSocialService.GetUserBadgesAsync(userId, cancellationToken);
+
+    public void DisconnectDiscord() => _discordSocialService.DisconnectSession();
+
+    public Task<SocialConnectionResult> RestoreDiscordSessionAsync(
+        string accessToken,
+        string refreshToken,
+        CancellationToken cancellationToken = default)
+        => _discordSocialService.RestoreSessionAsync(accessToken, refreshToken, cancellationToken);
 
     public static string GetFriendStatusLabel(SocialFriend friend)
     {

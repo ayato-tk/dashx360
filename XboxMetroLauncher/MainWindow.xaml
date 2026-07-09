@@ -854,7 +854,7 @@
                                   DisplayMemberPath="Title" />
                         <Button Content="Add Executable" Style="{StaticResource SettingsActionButtonStyle}" Margin="30,6,30,0" Command="{Binding AddGameCommand}" />
                         <Button Content="Scan Steam Games" Style="{StaticResource SettingsActionButtonStyle}" Margin="30,6,30,0" Command="{Binding ScanSteamGamesCommand}" />
-                        <Button Content="Steam Setup" Style="{StaticResource SettingsActionButtonStyle}" Margin="30,6,30,0" Command="{Binding OpenSteamSetupCommand}" />
+                        <Button Content="Integrations" Style="{StaticResource SettingsActionButtonStyle}" Margin="30,6,30,0" Command="{Binding OpenIntegrationsCommand}" />
                         <Button Content="Edit Executable" Style="{StaticResource SettingsActionButtonStyle}" Margin="30,6,30,0" Command="{Binding EditSelectedGameCommand}" />
                         <Button Content="Choose Home Screen Image" Style="{StaticResource SettingsActionButtonStyle}" Margin="30,6,30,0" Command="{Binding ChooseSelectedHomeImageCommand}" />
                         <Button Content="Choose My Games/Apps Image" Style="{StaticResource SettingsActionButtonStyle}" Margin="30,6,30,0" Command="{Binding ChooseSelectedGameMenuImageCommand}" />
@@ -896,6 +896,7 @@
                         <CheckBox Content="Play UI sounds" IsChecked="{Binding Settings.PlayUiSounds}" Style="{StaticResource SettingsCheckBoxStyle}" />
                         <CheckBox Content="Enable controller input" IsChecked="{Binding Settings.EnableControllerInput}" Style="{StaticResource SettingsCheckBoxStyle}" />
                         <CheckBox Content="Launch on Windows startup" IsChecked="{Binding Settings.LaunchOnWindowsStartup}" Style="{StaticResource SettingsCheckBoxStyle}" />
+                        <CheckBox Content="Skip boot animation" IsChecked="{Binding Settings.SkipBootAnimation}" Style="{StaticResource SettingsCheckBoxStyle}" />
                         <CheckBox Content="Minimize on Game Launch" IsChecked="{Binding Settings.MinimizeOnGameLaunch}" Style="{StaticResource SettingsCheckBoxStyle}" Margin="30,6,0,18" />
                         <Button Content="Save Settings" Style="{StaticResource SettingsActionButtonStyle}" Margin="30,0,30,18" Command="{Binding SaveSettingsCommand}" />
                     </StackPanel>
@@ -1243,6 +1244,202 @@
                                 Style="{StaticResource SettingsActionButtonStyle}"
                                 Width="130"
                                 Command="{Binding CloseSteamSetupCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="92,0,0,45">
+                <Border Width="18" Height="18" CornerRadius="9" Background="#FF6CB344"><TextBlock Text="A" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                <TextBlock Text=" Select   " Foreground="White" FontSize="15" />
+                <Border Width="18" Height="18" CornerRadius="9" Background="#FFD73A3A"><TextBlock Text="B" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                <TextBlock Text=" Back" Foreground="White" FontSize="15" />
+            </StackPanel>
+        </Grid>
+
+        <Grid x:Name="IntegrationsOverlay"
+              FocusManager.IsFocusScope="True"
+              KeyboardNavigation.DirectionalNavigation="Cycle"
+              KeyboardNavigation.TabNavigation="Cycle"
+              Visibility="{Binding IsIntegrationsOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Rectangle Fill="#77000000" />
+            <Border Width="560"
+                    Height="360"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#F1F4F4F4"
+                    BorderBrush="#88FFFFFF"
+                    BorderThickness="1">
+                <Grid Margin="26">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="Integrations"
+                                   Foreground="#FF333333"
+                                   FontSize="30"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="Connect external services to bring friends, presence and achievements into the dashboard."
+                                   Foreground="#FF555555"
+                                   FontSize="16"
+                                   TextWrapping="Wrap"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="0,26,0,0">
+                        <Button Content="Steam Setup"
+                                Style="{StaticResource SettingsActionButtonStyle}"
+                                Margin="0,0,0,12"
+                                Command="{Binding OpenSteamSetupCommand}" />
+                        <Button Content="Discord Setup"
+                                Style="{StaticResource SettingsActionButtonStyle}"
+                                Command="{Binding OpenDiscordSetupCommand}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,20,0,0">
+                        <Button Content="Back"
+                                Style="{StaticResource SettingsActionButtonStyle}"
+                                Width="130"
+                                Command="{Binding CloseIntegrationsCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="92,0,0,45">
+                <Border Width="18" Height="18" CornerRadius="9" Background="#FF6CB344"><TextBlock Text="A" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                <TextBlock Text=" Select   " Foreground="White" FontSize="15" />
+                <Border Width="18" Height="18" CornerRadius="9" Background="#FFD73A3A"><TextBlock Text="B" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                <TextBlock Text=" Back" Foreground="White" FontSize="15" />
+            </StackPanel>
+        </Grid>
+
+        <Grid x:Name="DiscordSetupOverlay"
+              FocusManager.IsFocusScope="True"
+              KeyboardNavigation.DirectionalNavigation="Cycle"
+              KeyboardNavigation.TabNavigation="Cycle"
+              Visibility="{Binding IsDiscordSetupOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Rectangle Fill="#77000000" />
+            <Border Width="760"
+                    Height="500"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#F1F4F4F4"
+                    BorderBrush="#88FFFFFF"
+                    BorderThickness="1">
+                <Grid Margin="26">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="Discord Setup"
+                                   Foreground="#FF333333"
+                                   FontSize="30"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="Bring your Discord friends list into the Guide. Sign-in happens in your browser; the session saves only to this app copy's UserData folder."
+                                   Foreground="#FF555555"
+                                   FontSize="16"
+                                   TextWrapping="Wrap"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1"
+                                  Margin="0,22,0,0"
+                                  VerticalScrollBarVisibility="Hidden"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Focusable="False"
+                                  PanningMode="VerticalOnly">
+                        <StackPanel>
+                            <TextBlock Text="Discord Application ID"
+                                       Foreground="#FF333333"
+                                       FontSize="18" />
+                            <DockPanel Margin="0,8,0,16">
+                                <Button Content="Paste"
+                                        Style="{StaticResource SettingsActionButtonStyle}"
+                                        Width="110"
+                                        Margin="10,0,0,0"
+                                        DockPanel.Dock="Right"
+                                        Command="{Binding PasteDiscordAppIdCommand}" />
+                                <TextBox Text="{Binding DiscordSetupApplicationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="42"
+                                         FontSize="20"
+                                         VerticalContentAlignment="Center" />
+                            </DockPanel>
+
+                            <TextBlock Text="Bot token (optional — shows Discord profile badges)"
+                                       Foreground="#FF333333"
+                                       FontSize="18" />
+                            <DockPanel Margin="0,8,0,16">
+                                <Button Content="Paste"
+                                        Style="{StaticResource SettingsActionButtonStyle}"
+                                        Width="110"
+                                        Margin="10,0,0,0"
+                                        DockPanel.Dock="Right"
+                                        Command="{Binding PasteDiscordBotTokenCommand}" />
+                                <TextBox Text="{Binding DiscordSetupBotToken, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="42"
+                                         FontSize="16"
+                                         VerticalContentAlignment="Center" />
+                            </DockPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                                <Button Content="Open Developer Portal"
+                                        Style="{StaticResource SettingsActionButtonStyle}"
+                                        Width="240"
+                                        Command="{Binding OpenDiscordDevPortalCommand}" />
+                            </StackPanel>
+
+                            <TextBlock Foreground="#FF555555"
+                                       FontSize="15"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,14">
+                                <Run Text="1. Create an application on the Developer Portal (any name works)." />
+                                <LineBreak />
+                                <Run Text="2. In its sidebar, open Discord Social SDK > Getting Started and submit the form to enable the SDK." />
+                                <LineBreak />
+                                <Run Text="3. In its OAuth2 tab, add this redirect URL: http://127.0.0.1/callback" />
+                                <LineBreak />
+                                <Run Text="4. Copy the Application ID from General Information and paste it above." />
+                                <LineBreak />
+                                <Run Text="5. Optional: in the Bot tab, Reset Token and paste it above to show profile badges." />
+                            </TextBlock>
+
+                            <Border Background="#22FFFFFF"
+                                    BorderBrush="#55FFFFFF"
+                                    BorderThickness="1"
+                                    Padding="14"
+                                    Margin="0,0,0,8">
+                                <TextBlock Text="{Binding DiscordSetupStatus}"
+                                           Foreground="#FF333333"
+                                           FontSize="17"
+                                           TextWrapping="Wrap" />
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,20,0,0">
+                        <Button Content="Connect"
+                                Style="{StaticResource SettingsActionButtonStyle}"
+                                Width="160"
+                                Margin="0,0,10,0"
+                                Command="{Binding ConnectDiscordSetupCommand}" />
+                        <Button Content="Disconnect"
+                                Style="{StaticResource SettingsActionButtonStyle}"
+                                Width="170"
+                                Margin="0,0,10,0"
+                                Command="{Binding DisconnectDiscordSetupCommand}" />
+                        <Button Content="Back"
+                                Style="{StaticResource SettingsActionButtonStyle}"
+                                Width="130"
+                                Command="{Binding CloseDiscordSetupCommand}" />
                     </StackPanel>
                 </Grid>
             </Border>

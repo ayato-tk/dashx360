@@ -68,6 +68,8 @@ public sealed class DashboardViewModel : ObservableObject
     private bool _isThemeMenuOpen;
     private bool _isThemeCreatorOpen;
     private bool _isSteamSetupOpen;
+    private bool _isDiscordSetupOpen;
+    private bool _isIntegrationsOpen;
     private bool _isMusicPlayerOpen;
     private bool _isMusicPlayerTransparent;
     private bool _isMusicVisualizerFullscreen;
@@ -98,6 +100,9 @@ public sealed class DashboardViewModel : ObservableObject
     private string _steamSetupApiKey = string.Empty;
     private string _steamSetupSteamId64 = string.Empty;
     private string _steamSetupStatus = "Steam is not connected.";
+    private string _discordSetupApplicationId = string.Empty;
+    private string _discordSetupBotToken = string.Empty;
+    private string _discordSetupStatus = "Discord is not connected.";
     private int _libraryMenuStartIndex;
     private const int LibraryVisibleWindowSize = 6;
     private const double LibraryMenuLeftPeekOffset = 176;
@@ -194,6 +199,19 @@ public sealed class DashboardViewModel : ObservableObject
         PasteSteamIdCommand = new RelayCommand(() => SteamSetupSteamId64 = ExtractSteamId64(GetClipboardText()));
         OpenSteamApiKeyPageCommand = new RelayCommand(() => OpenExternalUrl("https://steamcommunity.com/dev/apikey", "Opening Steam API key page"));
         OpenSteamProfileHelpCommand = new RelayCommand(() => OpenExternalUrl("https://steamid.io/lookup", "Opening SteamID lookup"));
+        OpenIntegrationsCommand = new RelayCommand(() =>
+        {
+            IsIntegrationsOpen = true;
+            _audioService.Play("select");
+        });
+        CloseIntegrationsCommand = new RelayCommand(() => IsIntegrationsOpen = false);
+        OpenDiscordSetupCommand = new RelayCommand(OpenDiscordSetup);
+        CloseDiscordSetupCommand = new RelayCommand(() => IsDiscordSetupOpen = false);
+        ConnectDiscordSetupCommand = new AsyncRelayCommand(ConnectDiscordSetupAsync);
+        DisconnectDiscordSetupCommand = new AsyncRelayCommand(DisconnectDiscordSetupAsync);
+        PasteDiscordAppIdCommand = new RelayCommand(() => DiscordSetupApplicationId = GetClipboardText());
+        PasteDiscordBotTokenCommand = new RelayCommand(() => DiscordSetupBotToken = GetClipboardText());
+        OpenDiscordDevPortalCommand = new RelayCommand(() => OpenExternalUrl("https://discord.com/developers/applications", "Opening Discord Developer Portal"));
         OpenThemeMenuCommand = new RelayCommand(OpenThemeMenu);
         CloseThemeMenuCommand = new RelayCommand(() => IsThemeMenuOpen = false);
         SelectThemeCommand = new AsyncRelayCommand(SelectThemeAsync);
@@ -624,6 +642,18 @@ public sealed class DashboardViewModel : ObservableObject
         set => SetProperty(ref _isSteamSetupOpen, value);
     }
 
+    public bool IsDiscordSetupOpen
+    {
+        get => _isDiscordSetupOpen;
+        set => SetProperty(ref _isDiscordSetupOpen, value);
+    }
+
+    public bool IsIntegrationsOpen
+    {
+        get => _isIntegrationsOpen;
+        set => SetProperty(ref _isIntegrationsOpen, value);
+    }
+
     public bool IsMusicPlayerOpen
     {
         get => _isMusicPlayerOpen;
@@ -732,6 +762,24 @@ public sealed class DashboardViewModel : ObservableObject
     {
         get => _steamSetupStatus;
         set => SetProperty(ref _steamSetupStatus, value);
+    }
+
+    public string DiscordSetupApplicationId
+    {
+        get => _discordSetupApplicationId;
+        set => SetProperty(ref _discordSetupApplicationId, value?.Trim() ?? string.Empty);
+    }
+
+    public string DiscordSetupBotToken
+    {
+        get => _discordSetupBotToken;
+        set => SetProperty(ref _discordSetupBotToken, value?.Trim() ?? string.Empty);
+    }
+
+    public string DiscordSetupStatus
+    {
+        get => _discordSetupStatus;
+        set => SetProperty(ref _discordSetupStatus, value);
     }
 
     public string ThemeMenuVisibilityTitle => SelectedTheme?.Name ?? DashboardTheme.BuiltInThemeName;
@@ -946,6 +994,15 @@ public sealed class DashboardViewModel : ObservableObject
     public ICommand CloseSteamSetupCommand { get; }
     public ICommand SaveSteamSetupCommand { get; }
     public ICommand TestSteamSetupCommand { get; }
+    public ICommand OpenIntegrationsCommand { get; }
+    public ICommand CloseIntegrationsCommand { get; }
+    public ICommand OpenDiscordSetupCommand { get; }
+    public ICommand CloseDiscordSetupCommand { get; }
+    public ICommand ConnectDiscordSetupCommand { get; }
+    public ICommand DisconnectDiscordSetupCommand { get; }
+    public ICommand PasteDiscordAppIdCommand { get; }
+    public ICommand PasteDiscordBotTokenCommand { get; }
+    public ICommand OpenDiscordDevPortalCommand { get; }
     public ICommand PasteSteamApiKeyCommand { get; }
     public ICommand PasteSteamIdCommand { get; }
     public ICommand OpenSteamApiKeyPageCommand { get; }
@@ -1007,13 +1064,6 @@ public sealed class DashboardViewModel : ObservableObject
         EnsureProfileDefaults();
         Settings.ThemeName = NormalizeThemeName(Settings.ThemeName);
         ApplySelectedTheme(Settings.ThemeName);
-        Settings.SocialIntegrationMode = SocialIntegrationMode.LocalOnly;
-        Settings.DiscordUserId = string.Empty;
-        Settings.DiscordDisplayName = string.Empty;
-        Settings.DiscordAvatarPathOrUrl = string.Empty;
-        Settings.DiscordAccessTokenEncrypted = string.Empty;
-        Settings.DiscordGrantedScopes = string.Empty;
-        Settings.DiscordTokenType = string.Empty;
         _library = await _libraryService.LoadAsync();
         foreach (var game in _library.Games)
         {
@@ -1160,6 +1210,8 @@ public sealed class DashboardViewModel : ObservableObject
         IsThemeMenuOpen = false;
         IsThemeCreatorOpen = false;
         IsSteamSetupOpen = false;
+        IsDiscordSetupOpen = false;
+        IsIntegrationsOpen = false;
         IsMusicPlayerOpen = false;
         IsQuickMenuOpen = false;
         IsDetailsOpen = false;
@@ -1180,6 +1232,8 @@ public sealed class DashboardViewModel : ObservableObject
         IsProfileEditorOpen = false;
         IsThemeMenuOpen = false;
         IsSteamSetupOpen = false;
+        IsDiscordSetupOpen = false;
+        IsIntegrationsOpen = false;
         IsMusicPlayerOpen = false;
         IsQuickMenuOpen = false;
         IsDetailsOpen = false;
@@ -1195,6 +1249,8 @@ public sealed class DashboardViewModel : ObservableObject
         IsThemeMenuOpen = false;
         IsThemeCreatorOpen = false;
         IsSteamSetupOpen = false;
+        IsDiscordSetupOpen = false;
+        IsIntegrationsOpen = false;
         IsMusicPlayerOpen = false;
         IsQuickMenuOpen = false;
         IsDetailsOpen = false;
@@ -1207,6 +1263,8 @@ public sealed class DashboardViewModel : ObservableObject
         IsThemeMenuOpen = true;
         IsThemeCreatorOpen = false;
         IsSteamSetupOpen = false;
+        IsDiscordSetupOpen = false;
+        IsIntegrationsOpen = false;
         IsMyGamesOpen = false;
         IsLauncherSettingsOpen = false;
         IsProfileEditorOpen = false;
@@ -1221,6 +1279,8 @@ public sealed class DashboardViewModel : ObservableObject
         IsThemeCreatorOpen = true;
         IsThemeMenuOpen = false;
         IsSteamSetupOpen = false;
+        IsDiscordSetupOpen = false;
+        IsIntegrationsOpen = false;
         IsMyGamesOpen = false;
         IsProfileEditorOpen = false;
         IsMusicPlayerOpen = false;
@@ -1253,6 +1313,8 @@ public sealed class DashboardViewModel : ObservableObject
         IsThemeMenuOpen = false;
         IsThemeCreatorOpen = false;
         IsSteamSetupOpen = false;
+        IsDiscordSetupOpen = false;
+        IsIntegrationsOpen = false;
         IsQuickMenuOpen = false;
         IsDetailsOpen = false;
         OnPropertyChanged(nameof(CurrentThemeBackgroundPath));
@@ -1416,9 +1478,23 @@ public sealed class DashboardViewModel : ObservableObject
             return;
         }
 
+        if (IsDiscordSetupOpen)
+        {
+            IsDiscordSetupOpen = false;
+            _audioService.Play("back");
+            return;
+        }
+
         if (IsSteamSetupOpen)
         {
             IsSteamSetupOpen = false;
+            _audioService.Play("back");
+            return;
+        }
+
+        if (IsIntegrationsOpen)
+        {
+            IsIntegrationsOpen = false;
             _audioService.Play("back");
             return;
         }
@@ -1710,6 +1786,154 @@ public sealed class DashboardViewModel : ObservableObject
             SteamApiKey = SteamSetupApiKey.Trim(),
             SteamId64 = ExtractSteamId64(SteamSetupSteamId64)
         };
+
+    private void OpenDiscordSetup()
+    {
+        DiscordSetupApplicationId = _socialIntegrationManager.DiscordApplicationId;
+        DiscordSetupBotToken = _socialIntegrationManager.DiscordBotToken;
+        DiscordSetupStatus = BuildDiscordSetupStatus();
+        IsDiscordSetupOpen = true;
+        _audioService.Play("select");
+    }
+
+    private string BuildDiscordSetupStatus()
+    {
+        if (_socialIntegrationManager.IsDiscordSessionActive)
+        {
+            return string.IsNullOrWhiteSpace(Settings.DiscordDisplayName)
+                ? "Discord is connected."
+                : $"Connected as {Settings.DiscordDisplayName}.";
+        }
+
+        if (!_socialIntegrationManager.IsDiscordConfigured)
+        {
+            return "Paste your Discord Application ID, then select Connect. Create one on the Developer Portal if you don't have it.";
+        }
+
+        return Settings.DiscordConnectionState == DiscordConnectionState.Connected
+            ? "Session saved. Discord reconnects when the friends list loads, or select Connect to sign in again."
+            : "Ready to connect. Sign-in opens in your browser.";
+    }
+
+    private async Task ConnectDiscordSetupAsync()
+    {
+        var applicationId = DiscordSetupApplicationId.Trim();
+        if (applicationId.Length == 0 || !applicationId.All(char.IsDigit))
+        {
+            DiscordSetupStatus = "Enter your Discord Application ID (numbers only).";
+            _audioService.Play("back");
+            return;
+        }
+
+        try
+        {
+            _socialIntegrationManager.SaveDiscordConfig(applicationId, DiscordSetupBotToken);
+        }
+        catch (Exception exception)
+        {
+            DiscordSetupStatus = $"Could not save the Discord config: {exception.Message}";
+            _audioService.Play("back");
+            return;
+        }
+
+        DiscordSetupStatus = "Authorize DashX360 in your browser to finish connecting...";
+        var result = await _socialIntegrationManager.ConnectDiscordAsync();
+        ApplyDiscordConnection(result);
+        await PersistSettingsAsync();
+        DiscordSetupStatus = string.IsNullOrWhiteSpace(result.PopupMessage)
+            ? BuildDiscordSetupStatus()
+            : result.PopupMessage;
+        var connected = result.State == DiscordConnectionState.Connected;
+        StatusMessage = connected ? "Discord connected" : "Discord connection failed";
+        _audioService.Play(connected ? "select" : "back");
+    }
+
+    private async Task DisconnectDiscordSetupAsync()
+    {
+        _socialIntegrationManager.DisconnectDiscord();
+        Settings.DiscordConnectionState = DiscordConnectionState.NotConnected;
+        Settings.DiscordUserId = string.Empty;
+        Settings.DiscordDisplayName = string.Empty;
+        Settings.DiscordAvatarPathOrUrl = string.Empty;
+        Settings.DiscordAccessTokenEncrypted = string.Empty;
+        Settings.DiscordRefreshTokenEncrypted = string.Empty;
+        Settings.DiscordGrantedScopes = string.Empty;
+        Settings.DiscordTokenType = string.Empty;
+        await PersistSettingsAsync();
+        DiscordSetupStatus = "Discord disconnected.";
+        StatusMessage = "Discord disconnected";
+        _audioService.Play("back");
+    }
+
+    public void LaunchDiscordProfile(ulong userId, string displayName)
+    {
+        var friendly = string.IsNullOrWhiteSpace(displayName) ? "Discord" : displayName;
+        try
+        {
+            if (Application.Current?.MainWindow is { } window)
+            {
+                window.WindowState = WindowState.Minimized;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"discord://-/users/{userId}",
+                UseShellExecute = true
+            });
+            StatusMessage = $"Opening Discord to call {friendly}";
+        }
+        catch
+        {
+            OpenExternalUrl($"https://discord.com/users/{userId}", $"Opening Discord to call {friendly}");
+        }
+    }
+
+    public void ApplyDiscordConnection(SocialConnectionResult result)
+    {
+        Settings.DiscordConnectionState = result.State;
+        if (result.State == DiscordConnectionState.Connected)
+        {
+            if (!string.IsNullOrWhiteSpace(result.UserId))
+            {
+                Settings.DiscordUserId = result.UserId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.DisplayName))
+            {
+                Settings.DiscordDisplayName = result.DisplayName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.AvatarPathOrUrl))
+            {
+                Settings.DiscordAvatarPathOrUrl = result.AvatarPathOrUrl;
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.GrantedScopes))
+            {
+                Settings.DiscordGrantedScopes = result.GrantedScopes;
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.TokenTypeName))
+            {
+                Settings.DiscordTokenType = result.TokenTypeName;
+            }
+
+            if (!string.IsNullOrEmpty(result.AccessToken))
+            {
+                Settings.DiscordAccessTokenEncrypted = SecureStringStorage.Protect(result.AccessToken);
+            }
+
+            if (!string.IsNullOrEmpty(result.RefreshToken))
+            {
+                Settings.DiscordRefreshTokenEncrypted = SecureStringStorage.Protect(result.RefreshToken);
+            }
+        }
+        else if (result.State == DiscordConnectionState.SessionExpired)
+        {
+            Settings.DiscordAccessTokenEncrypted = string.Empty;
+            Settings.DiscordRefreshTokenEncrypted = string.Empty;
+        }
+    }
 
     private void OpenYouTube()
     {
@@ -2175,6 +2399,8 @@ public sealed class DashboardViewModel : ObservableObject
             selected.Refresh();
         }
     }
+
+    public Task PersistSettingsAsync() => _settingsService.SaveAsync(Settings);
 
     private async Task SaveSettingsAsync()
     {

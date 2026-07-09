@@ -45,7 +45,9 @@ public partial class MainWindow : Window
     private readonly IFriendsService _friendsService;
     private readonly SocialIntegrationManager _socialIntegrationManager;
     private readonly ISteamCommunityService _steamCommunityService;
+    private readonly ISettingsService _settingsService;
     private readonly DiscordPartyService _discordPartyService;
+    private readonly DiscordSocialService _discordSocialService;
     private readonly DispatcherTimer _clockTimer;
     private readonly DispatcherTimer _performanceDebugTimer;
     private readonly Dictionary<string, Button> _lastFocusedButtonByTab = [];
@@ -64,6 +66,7 @@ public partial class MainWindow : Window
     private Point? _lastMousePosition;
     private GuideWindow? _guideWindow;
     private GuideViewModel? _guideViewModel;
+    private ToastWindow? _toastWindow;
     private UIElement? _guideReturnFocusElement;
     private bool _restoreFocusAfterGuideClose;
     private IntPtr _guideReturnWindowHandle;
@@ -84,9 +87,12 @@ public partial class MainWindow : Window
         _friendsService = new FriendsService(store);
         var localSocialIntegrationService = new LocalSocialIntegrationService(_friendsService);
         _steamCommunityService = new SteamCommunityService();
-        _socialIntegrationManager = new SocialIntegrationManager(_friendsService, localSocialIntegrationService, _steamCommunityService);
+        _discordSocialService = new DiscordSocialService();
+        _discordSocialService.DirectMessageReceived += DiscordSocial_OnDirectMessageReceived;
+        _socialIntegrationManager = new SocialIntegrationManager(_friendsService, localSocialIntegrationService, _steamCommunityService, _discordSocialService);
         _discordPartyService = new DiscordPartyService();
         ISettingsService settingsService = new SettingsService(store);
+        _settingsService = settingsService;
         IProfileService profileService = new ProfileService(store);
         IGameLibraryService gameLibraryService = new JsonGameLibraryService(store);
         IImportExportService importExportService = new ImportExportService(gameLibraryService, profileService, settingsService, appData);
@@ -183,7 +189,15 @@ public partial class MainWindow : Window
             _guideHotkeyService.Register(this);
             _clockTimer.Start();
             _performanceDebugTimer.Start();
-            StartBootVideo();
+            if (await ShouldSkipBootAnimationAsync())
+            {
+                SkipBootIntro();
+            }
+            else
+            {
+                StartBootVideo();
+            }
+
             await _viewModel.InitializeAsync();
 
             _viewModel.Settings.PropertyChanged += Settings_OnPropertyChanged;
@@ -210,11 +224,36 @@ public partial class MainWindow : Window
         _guideViewModel?.Dispose();
         _guideHotkeyService.Dispose();
         _controllerInputService.Dispose();
+        _discordSocialService.DirectMessageReceived -= DiscordSocial_OnDirectMessageReceived;
+        _discordSocialService.Dispose();
+        _toastWindow?.Close();
         _clockTimer.Stop();
         _performanceDebugTimer.Stop();
         CleanupBootBrowser();
         WritePerformanceDebugReport();
     }
+
+    private void DiscordSocial_OnDirectMessageReceived(ulong userId)
+        => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var message = _discordSocialService.GetDirectMessages(userId).LastOrDefault();
+            if (message is null || message.IsFromCurrentUser)
+            {
+                return;
+            }
+
+            if (_guideWindow?.IsVisible == true && _guideViewModel?.IsChatOpenWith(userId) == true)
+            {
+                // The conversation is already on screen; no toast needed.
+                return;
+            }
+
+            var author = string.IsNullOrWhiteSpace(message.AuthorName) ? "Discord" : message.AuthorName;
+            var preview = message.Content.Length > 90 ? message.Content[..90] + "…" : message.Content;
+            _toastWindow ??= new ToastWindow { Owner = this };
+            _toastWindow.ShowToast("New Message", $"{author}: {preview}");
+            _audioService.Play("notify");
+        }));
 
     private void Settings_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -695,6 +734,19 @@ public partial class MainWindow : Window
         _restoreFocusAfterGuideClose = false;
     }
 
+    private async Task<bool> ShouldSkipBootAnimationAsync()
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            return settings.SkipBootAnimation;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private void StartBootVideo()
     {
         var bootVideoPath = AppPaths.FindFile(Path.Combine("Assets", "Boot", "Boot Screen.mp4"));
@@ -931,6 +983,8 @@ public partial class MainWindow : Window
             or nameof(DashboardViewModel.IsThemeMenuOpen)
             or nameof(DashboardViewModel.IsThemeCreatorOpen)
             or nameof(DashboardViewModel.IsSteamSetupOpen)
+            or nameof(DashboardViewModel.IsDiscordSetupOpen)
+            or nameof(DashboardViewModel.IsIntegrationsOpen)
             or nameof(DashboardViewModel.IsMusicPlayerOpen)
             or nameof(DashboardViewModel.IsDetailsOpen))
         {
@@ -1635,6 +1689,8 @@ public partial class MainWindow : Window
            || _viewModel.IsThemeMenuOpen
            || _viewModel.IsThemeCreatorOpen
            || _viewModel.IsSteamSetupOpen
+           || _viewModel.IsDiscordSetupOpen
+           || _viewModel.IsIntegrationsOpen
            || _viewModel.IsMusicPlayerOpen
            || _viewModel.IsSearchOverlayOpen
            || _viewModel.IsDetailsOpen
@@ -1674,6 +1730,16 @@ public partial class MainWindow : Window
             if (_viewModel.IsSteamSetupOpen)
             {
                 return SteamSetupOverlay;
+            }
+
+            if (_viewModel.IsDiscordSetupOpen)
+            {
+                return DiscordSetupOverlay;
+            }
+
+            if (_viewModel.IsIntegrationsOpen)
+            {
+                return IntegrationsOverlay;
             }
 
             return LauncherSettingsOverlay;

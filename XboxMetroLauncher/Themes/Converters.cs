@@ -137,7 +137,6 @@ public sealed class StringToImageSourceConverter : IValueConverter
             }
 
             image.EndInit();
-            image.Freeze();
             return image;
         });
     }

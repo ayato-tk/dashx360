@@ -8,12 +8,15 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using XboxMetroLauncher.Models;
 using XboxMetroLauncher.Services;
+using XboxMetroLauncher.Utilities;
 
 namespace XboxMetroLauncher.ViewModels;
 
 public sealed class GuideViewModel : ObservableObject, IDisposable
 {
     private const int AchievementGridColumns = 7;
+    private const string ConnectDiscordActionId = "action:connect-discord";
+    private const string SearchFriendsActionId = "action:search-friends";
 
     private enum MediaFocusArea
     {
@@ -31,6 +34,7 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         Party,
         FriendSearch,
         FriendProfile,
+        FriendChat,
         Achievements
     }
 
@@ -50,6 +54,7 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
     private readonly ISteamCommunityService _steamCommunityService;
     private readonly DispatcherTimer _clockTimer;
     private readonly DispatcherTimer _partyRefreshTimer;
+    private readonly DispatcherTimer _discordFriendsRefreshTimer;
     private readonly SemaphoreSlim _friendsSaveLock = new(1, 1);
     private readonly SemaphoreSlim _partyRefreshLock = new(1, 1);
     private readonly List<FriendProfile> _friends = [];
@@ -109,6 +114,16 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
     private bool _returnToSearchOnProfileBack;
     private bool _restoreMediaSubmenuAfterMusicPicker;
     private bool _isRefreshingFriends;
+    private bool _isConnectingDiscord;
+    private bool _discordRestoreAttempted;
+    private bool _friendsOnlineOnly;
+    private bool _friendSearchFilterMode;
+    private bool _friendSearchComposeMode;
+    private string _friendsListQuery = string.Empty;
+    private SocialFriendSource? _friendsSourceFilter;
+    private ulong _chatFriendUserId;
+    private string _chatFriendName = string.Empty;
+    private IReadOnlyList<DiscordProfileBadge> _activeFriendBadges = [];
     private bool _isUsingDiscordPartyData;
     private bool _runningGameForceClosePending;
     private string _partyStatusMessage = string.Empty;
@@ -154,6 +169,7 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         FriendProfileActions = [];
         AchievementGameItems = [];
         AchievementItems = [];
+        ChatMessages = [];
 
         ActivateMediaControlCommand = new RelayCommand(parameter =>
         {
@@ -190,6 +206,14 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         _clockTimer.Tick += (_, _) => UpdateClock();
         _partyRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _partyRefreshTimer.Tick += async (_, _) => await RefreshPartySnapshotAsync().ConfigureAwait(true);
+        _discordFriendsRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _discordFriendsRefreshTimer.Tick += (_, _) =>
+        {
+            _discordFriendsRefreshTimer.Stop();
+            _ = RefreshAsync(showPopup: false);
+        };
+        _socialIntegrationManager.DiscordFriendsUpdated += SocialIntegrationManager_OnDiscordFriendsUpdated;
+        _socialIntegrationManager.DiscordDirectMessageReceived += SocialIntegrationManager_OnDiscordDirectMessage;
 
         BuildSearchKeys();
         BuildItems();
@@ -211,6 +235,8 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
     public ObservableCollection<GuideKeyboardKeyItem> SearchKeys { get; }
 
     public ObservableCollection<GuideMenuItem> FriendProfileActions { get; }
+
+    public ObservableCollection<GuideChatMessageItem> ChatMessages { get; }
 
     public ObservableCollection<GuideAchievementGameItem> AchievementGameItems { get; }
 
@@ -389,10 +415,12 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
 
     public bool IsFriendProfileScreen => _screen == GuideScreen.FriendProfile;
 
+    public bool IsFriendChatScreen => _screen == GuideScreen.FriendChat;
+
     public bool IsAchievementsScreen => _screen == GuideScreen.Achievements;
 
     public bool IsFriendOverlayScreen
-        => _screen is GuideScreen.FriendsList or GuideScreen.Party or GuideScreen.FriendSearch or GuideScreen.FriendProfile or GuideScreen.Achievements;
+        => _screen is GuideScreen.FriendsList or GuideScreen.Party or GuideScreen.FriendSearch or GuideScreen.FriendProfile or GuideScreen.FriendChat or GuideScreen.Achievements;
 
     public bool IsMediaSongRowFocused => IsMediaTab && _mediaFocusArea == MediaFocusArea.SongRow;
 
@@ -486,7 +514,15 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
 
     public string SearchAccentsButtonText => _searchKeyboardLayout == SearchKeyboardLayout.Accents ? "ABC" : "Accents";
 
-    public string FriendsHeaderText => $"Friends ({_socialFriends.Count(friend => friend.IsOnline)} Online)";
+    public string FriendsHeaderText
+    {
+        get
+        {
+            var onlineCount = _socialFriends.Count(friend =>
+                (_friendsSourceFilter is null || friend.Source == _friendsSourceFilter) && friend.IsOnline);
+            return $"{FriendsSourceTabLabel} ({onlineCount} Online)";
+        }
+    }
 
     public string FriendsCommunityHeaderText => "Community";
 
@@ -496,7 +532,19 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
 
     public string FriendsGameInviteCountText => "0";
 
-    public string FriendsFooterText => "Sorted by online status";
+    public string FriendsFooterText
+    {
+        get
+        {
+            var text = _friendsOnlineOnly ? "Showing online friends only" : "Sorted by online status";
+            if (_friendsSourceFilter is not null)
+            {
+                text = $"{text}  •  Tab: {FriendsSourceTabLabel}";
+            }
+
+            return _friendsListQuery.Length == 0 ? text : $"{text}  •  Search: \"{_friendsListQuery}\"";
+        }
+    }
 
     public string AchievementsHeaderText => "Achievements";
 
@@ -636,6 +684,7 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         GuideScreen.Party => 574,
         GuideScreen.FriendSearch => 530,
         GuideScreen.FriendProfile => 562,
+        GuideScreen.FriendChat => 574,
         GuideScreen.Achievements => 574,
         _ => 646
     };
@@ -709,10 +758,11 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
     public string FooterXActionText
         => _screen switch
         {
-            GuideScreen.FriendsList => string.Empty,
+            GuideScreen.FriendsList => "Change Tab",
             GuideScreen.Party => "Leave Party",
             GuideScreen.FriendSearch => "Backspace",
             GuideScreen.FriendProfile => string.Empty,
+            GuideScreen.FriendChat => string.Empty,
             GuideScreen.Achievements when IsAchievementDetail => "Share Achievement",
             _ => _dashboard.RunningGameFooterActionText
         };
@@ -720,15 +770,16 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
     public string FooterYActionText
         => _screen switch
         {
-            GuideScreen.FriendsList => "Change Sort",
+            GuideScreen.FriendsList => _friendsOnlineOnly ? "Show All Friends" : "Show Online Only",
             GuideScreen.Party => string.Empty,
             GuideScreen.FriendSearch => "Space",
             GuideScreen.FriendProfile => string.Empty,
+            GuideScreen.FriendChat => "Write Message",
             _ => "Minimize Dashboard"
         };
 
     public bool ShowFooterXAction
-        => _screen is GuideScreen.MainMenu or GuideScreen.FriendSearch or GuideScreen.Party
+        => _screen is GuideScreen.MainMenu or GuideScreen.FriendSearch or GuideScreen.Party or GuideScreen.FriendsList
             || (_screen == GuideScreen.Achievements && IsAchievementDetail);
 
     public bool ShowFooterYAction => _screen is not GuideScreen.FriendProfile and not GuideScreen.Party;
@@ -953,6 +1004,9 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
             case GuideScreen.FriendProfile:
                 ActivateSelectedFriendProfileAction();
                 return;
+            case GuideScreen.FriendChat:
+                OpenChatCompose();
+                return;
             case GuideScreen.Achievements:
                 ActivateSelectedAchievementScreenItem();
                 return;
@@ -996,6 +1050,13 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         if (IsSocialMessageOpen)
         {
             DismissSocialMessage();
+            return true;
+        }
+
+        if (_screen == GuideScreen.FriendChat)
+        {
+            SetScreen(GuideScreen.FriendProfile);
+            _audioService.Play("back");
             return true;
         }
 
@@ -1052,7 +1113,12 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
 
         if (_screen == GuideScreen.FriendSearch)
         {
-            if (_friendSearchReturnScreen == GuideScreen.Party)
+            if (_friendSearchReturnScreen == GuideScreen.FriendChat)
+            {
+                _friendSearchComposeMode = false;
+                SetScreen(GuideScreen.FriendChat);
+            }
+            else if (_friendSearchReturnScreen == GuideScreen.Party)
             {
                 OpenParty();
             }
@@ -1107,6 +1173,8 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
 
         if (_screen == GuideScreen.FriendsList)
         {
+            CycleFriendsSourceFilter();
+            _audioService.Play("select");
             return;
         }
 
@@ -1136,8 +1204,16 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
 
         if (_screen == GuideScreen.FriendsList)
         {
+            _friendsOnlineOnly = !_friendsOnlineOnly;
             SortFriendsByStatus();
             BuildFriendsListItems();
+            _audioService.Play("select");
+            return;
+        }
+
+        if (_screen == GuideScreen.FriendChat)
+        {
+            OpenChatCompose();
             _audioService.Play("select");
             return;
         }
@@ -1351,12 +1427,31 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _dashboard.PropertyChanged -= Dashboard_OnPropertyChanged;
+        _socialIntegrationManager.DiscordFriendsUpdated -= SocialIntegrationManager_OnDiscordFriendsUpdated;
+        _socialIntegrationManager.DiscordDirectMessageReceived -= SocialIntegrationManager_OnDiscordDirectMessage;
         _clockTimer.Stop();
         _partyRefreshTimer.Stop();
+        _discordFriendsRefreshTimer.Stop();
         ClearPendingDiscordPartyInvite();
         _partyRefreshLock.Dispose();
         _friendsSaveLock.Dispose();
     }
+
+    private void SocialIntegrationManager_OnDiscordDirectMessage(ulong userId)
+        => Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (IsFriendChatScreen && userId == _chatFriendUserId)
+            {
+                RebuildChatMessages();
+            }
+        }));
+
+    private void SocialIntegrationManager_OnDiscordFriendsUpdated()
+        => Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            _discordFriendsRefreshTimer.Stop();
+            _discordFriendsRefreshTimer.Start();
+        }));
 
     private async Task RefreshAsync(bool showPopup)
     {
@@ -2118,7 +2213,30 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
             IsAddFriend = true
         });
 
-        foreach (var friend in SortSocialFriends(_socialFriends))
+        if (_socialIntegrationManager.IsDiscordConfigured && !_socialIntegrationManager.IsDiscordSessionActive)
+        {
+            FriendsListItems.Add(new GuideFriendListItem
+            {
+                FriendId = ConnectDiscordActionId,
+                Gamertag = "Connect Discord",
+                Subtitle = string.Empty,
+                Status = string.Empty,
+                AvatarPath = string.Empty,
+                IsAddFriend = true
+            });
+        }
+
+        FriendsListItems.Add(new GuideFriendListItem
+        {
+            FriendId = SearchFriendsActionId,
+            Gamertag = _friendsListQuery.Length == 0 ? "Search Friends" : $"Clear Search: \"{_friendsListQuery}\"",
+            Subtitle = string.Empty,
+            Status = string.Empty,
+            AvatarPath = string.Empty,
+            IsAddFriend = true
+        });
+
+        foreach (var friend in GetVisibleSocialFriends())
         {
             FriendsListItems.Add(new GuideFriendListItem
             {
@@ -2130,10 +2248,50 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
             });
         }
 
+        if (SelectedFriendListIndex >= FriendsListItems.Count)
+        {
+            SelectedFriendListIndex = FriendsListItems.Count - 1;
+        }
+
         OnPropertyChanged(nameof(FriendsHeaderText));
         OnPropertyChanged(nameof(FriendsTotalCountText));
         OnPropertyChanged(nameof(FriendsSelectionCountText));
+        OnPropertyChanged(nameof(FriendsFooterText));
+        OnPropertyChanged(nameof(FooterXActionText));
+        OnPropertyChanged(nameof(FooterYActionText));
     }
+
+    private IEnumerable<SocialFriend> GetVisibleSocialFriends()
+        => SortSocialFriends(_socialFriends)
+            .Where(friend => _friendsSourceFilter is null || friend.Source == _friendsSourceFilter)
+            .Where(friend => !_friendsOnlineOnly || friend.IsOnline)
+            .Where(friend => _friendsListQuery.Length == 0
+                || friend.DisplayName.Contains(_friendsListQuery, StringComparison.CurrentCultureIgnoreCase));
+
+    private void CycleFriendsSourceFilter()
+    {
+        var order = new SocialFriendSource?[] { null, SocialFriendSource.Discord, SocialFriendSource.Steam, SocialFriendSource.Local };
+        var index = Array.IndexOf(order, _friendsSourceFilter);
+        for (var step = 1; step <= order.Length; step++)
+        {
+            var candidate = order[(index + step) % order.Length];
+            if (candidate is null || _socialFriends.Any(friend => friend.Source == candidate))
+            {
+                _friendsSourceFilter = candidate;
+                break;
+            }
+        }
+
+        BuildFriendsListItems();
+    }
+
+    private string FriendsSourceTabLabel => _friendsSourceFilter switch
+    {
+        SocialFriendSource.Discord => "Discord Friends",
+        SocialFriendSource.Steam => "Steam Friends",
+        SocialFriendSource.Local => "Local Friends",
+        _ => "Friends"
+    };
 
     private void MoveFriendList(int delta)
     {
@@ -2481,6 +2639,26 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         var item = FriendsListItems[SelectedFriendListIndex];
         _audioService.Play("select");
 
+        if (string.Equals(item.FriendId, ConnectDiscordActionId, StringComparison.OrdinalIgnoreCase))
+        {
+            _ = ConnectDiscordFromGuideAsync();
+            return;
+        }
+
+        if (string.Equals(item.FriendId, SearchFriendsActionId, StringComparison.OrdinalIgnoreCase))
+        {
+            if (_friendsListQuery.Length > 0)
+            {
+                _friendsListQuery = string.Empty;
+                BuildFriendsListItems();
+                return;
+            }
+
+            OpenFriendSearch();
+            _friendSearchFilterMode = true;
+            return;
+        }
+
         if (item.IsAddFriend)
         {
             OpenFriendSearch();
@@ -2510,6 +2688,8 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         }
 
         _friendSearchReturnScreen = returnScreen;
+        _friendSearchFilterMode = false;
+        _friendSearchComposeMode = false;
         FriendSearchQuery = string.Empty;
         _friendSearchCursorIndex = 0;
         _isSearchCapsEnabled = false;
@@ -2588,6 +2768,27 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
 
     private void CompleteFriendSearch()
     {
+        if (_friendSearchComposeMode)
+        {
+            _friendSearchComposeMode = false;
+            var messageText = FriendSearchQuery.Trim();
+            SetScreen(GuideScreen.FriendChat);
+            if (messageText.Length > 0)
+            {
+                _ = SendChatMessageAsync(messageText);
+            }
+
+            return;
+        }
+
+        if (_friendSearchFilterMode)
+        {
+            _friendSearchFilterMode = false;
+            _friendsListQuery = FriendSearchQuery.Trim();
+            OpenFriendsList();
+            return;
+        }
+
         var gamertag = FriendSearchQuery.Trim();
         if (string.IsNullOrWhiteSpace(gamertag))
         {
@@ -2736,10 +2937,132 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         ActivateSelectedSearchKey();
     }
 
+    public string ChatHeaderText => string.IsNullOrWhiteSpace(_chatFriendName) ? "Chat" : $"Chat — {_chatFriendName}";
+
+    public bool IsChatOpenWith(ulong userId) => IsFriendChatScreen && _chatFriendUserId == userId;
+
+    public bool IsChatEmpty => ChatMessages.Count == 0;
+
+    private void CallActiveFriendOnDiscord()
+    {
+        if (_activeSocialFriend is null || !TryGetDiscordUserId(_activeSocialFriend, out var userId))
+        {
+            StatusText = "Calls are only available for Discord friends.";
+            return;
+        }
+
+        _dashboard.LaunchDiscordProfile(userId, _activeSocialFriend.DisplayName);
+        // Get the dashboard out of the way so Discord comes to the foreground.
+        CloseGuide();
+    }
+
+    private void OpenFriendChatFromProfile()
+    {
+        if (_activeSocialFriend is null || !TryGetDiscordUserId(_activeSocialFriend, out var userId))
+        {
+            StatusText = "Messages are only available for Discord friends.";
+            return;
+        }
+
+        if (!_socialIntegrationManager.IsDiscordSessionActive)
+        {
+            ShowSocialMessage("Connect Discord to send messages.");
+            return;
+        }
+
+        var grantedScopes = _dashboard.Settings.DiscordGrantedScopes;
+        if (!string.IsNullOrWhiteSpace(grantedScopes)
+            && !grantedScopes.Split(' ').Contains("sdk.social_layer"))
+        {
+            ShowSocialMessage("Messaging needs extra Discord permissions. Open Settings > Integrations > Discord Setup, then Disconnect and Connect again.");
+            return;
+        }
+
+        _chatFriendUserId = userId;
+        _chatFriendName = _activeSocialFriend.DisplayName;
+        RebuildChatMessages();
+        SetScreen(GuideScreen.FriendChat);
+        OnPropertyChanged(nameof(ChatHeaderText));
+        StatusText = string.Empty;
+    }
+
+    private static bool TryGetDiscordUserId(SocialFriend friend, out ulong userId)
+    {
+        userId = 0;
+        const string prefix = "discord:";
+        return friend.Source == SocialFriendSource.Discord
+               && friend.Id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+               && ulong.TryParse(friend.Id[prefix.Length..], NumberStyles.None, CultureInfo.InvariantCulture, out userId);
+    }
+
+    private void RebuildChatMessages()
+    {
+        ChatMessages.Clear();
+        foreach (var message in _socialIntegrationManager.GetDiscordDirectMessages(_chatFriendUserId))
+        {
+            ChatMessages.Add(new GuideChatMessageItem
+            {
+                AuthorName = message.IsFromCurrentUser
+                    ? "You"
+                    : string.IsNullOrWhiteSpace(message.AuthorName) ? _chatFriendName : message.AuthorName,
+                Content = message.Content,
+                TimeText = message.SentAt.ToLocalTime().ToString("HH:mm", CultureInfo.CurrentCulture),
+                IsOwn = message.IsFromCurrentUser
+            });
+        }
+
+        OnPropertyChanged(nameof(IsChatEmpty));
+    }
+
+    private void OpenChatCompose()
+    {
+        OpenFriendSearch(GuideScreen.FriendChat);
+        _friendSearchComposeMode = true;
+    }
+
+    private async Task SendChatMessageAsync(string content)
+    {
+        var (success, errorMessage) = await _socialIntegrationManager
+            .SendDiscordDirectMessageAsync(_chatFriendUserId, content)
+            .ConfigureAwait(true);
+        if (success)
+        {
+            RebuildChatMessages();
+        }
+        else
+        {
+            ShowSocialMessage($"Message not sent: {errorMessage}");
+        }
+    }
+
+    public IEnumerable<DiscordProfileBadge> ActiveFriendBadges => _activeFriendBadges;
+
+    public bool HasActiveFriendBadges => _activeFriendBadges.Count > 0;
+
+    private async Task LoadActiveFriendBadgesAsync(ulong userId)
+    {
+        var badges = await _socialIntegrationManager.GetDiscordUserBadgesAsync(userId).ConfigureAwait(true);
+        if (_activeSocialFriend is not null
+            && TryGetDiscordUserId(_activeSocialFriend, out var currentUserId)
+            && currentUserId == userId)
+        {
+            _activeFriendBadges = badges;
+            OnPropertyChanged(nameof(ActiveFriendBadges));
+            OnPropertyChanged(nameof(HasActiveFriendBadges));
+        }
+    }
+
     private void SetActiveFriend(SocialFriend friend)
     {
         _activeSocialFriend = friend;
         _activeFriendProfile = BuildFriendProfileSnapshot(friend);
+        _activeFriendBadges = [];
+        OnPropertyChanged(nameof(ActiveFriendBadges));
+        OnPropertyChanged(nameof(HasActiveFriendBadges));
+        if (TryGetDiscordUserId(friend, out var discordUserId))
+        {
+            _ = LoadActiveFriendBadgesAsync(discordUserId);
+        }
         OnPropertyChanged(nameof(ActiveFriendGamertag));
         OnPropertyChanged(nameof(ActiveFriendPicturePath));
         OnPropertyChanged(nameof(ActiveFriendGamerscore));
@@ -2771,9 +3094,14 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
                 : DoNothing;
 
         FriendProfileActions.Add(new GuideMenuItem(primaryTitle, string.Empty, primaryAction));
+        if (isDiscordFriend)
+        {
+            FriendProfileActions.Add(new GuideMenuItem("Call on Discord", string.Empty, CallActiveFriendOnDiscord));
+        }
+
         FriendProfileActions.Add(new GuideMenuItem("Invite to Game", string.Empty, DoNothing));
         FriendProfileActions.Add(new GuideMenuItem("Invite to Party", string.Empty, InviteActiveFriendToParty));
-        FriendProfileActions.Add(new GuideMenuItem("Send Message", string.Empty, DoNothing));
+        FriendProfileActions.Add(new GuideMenuItem("Send Message", string.Empty, isDiscordFriend ? OpenFriendChatFromProfile : DoNothing));
         FriendProfileActions.Add(new GuideMenuItem("Compare Games", string.Empty, DoNothing));
         FriendProfileActions.Add(new GuideMenuItem("Submit Player Review", string.Empty, DoNothing));
         FriendProfileActions.Add(new GuideMenuItem("File Complaint", string.Empty, DoNothing));
@@ -3215,6 +3543,8 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
             QueueFriendsSave();
         }
 
+        await TryRestoreDiscordSessionAsync().ConfigureAwait(true);
+
         var result = await _socialIntegrationManager
             .LoadFriendsAsync(_dashboard.Settings.SocialIntegrationMode, _dashboard.Settings.DiscordConnectionState)
             .ConfigureAwait(true);
@@ -3235,6 +3565,84 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(FriendsSelectionCountText));
         OnPropertyChanged(nameof(PartyFriendCountText));
     }
+
+    private async Task TryRestoreDiscordSessionAsync()
+    {
+        var settings = _dashboard.Settings;
+        if (_discordRestoreAttempted
+            || settings.DiscordConnectionState != DiscordConnectionState.Connected
+            || !_socialIntegrationManager.IsDiscordConfigured
+            || _socialIntegrationManager.IsDiscordSessionActive)
+        {
+            return;
+        }
+
+        _discordRestoreAttempted = true;
+        var accessToken = SecureStringStorage.Unprotect(settings.DiscordAccessTokenEncrypted);
+        var refreshToken = SecureStringStorage.Unprotect(settings.DiscordRefreshTokenEncrypted);
+        if (string.IsNullOrEmpty(accessToken) && string.IsNullOrEmpty(refreshToken))
+        {
+            settings.DiscordConnectionState = DiscordConnectionState.NotConnected;
+            return;
+        }
+
+        var result = await _socialIntegrationManager
+            .RestoreDiscordSessionAsync(accessToken, refreshToken)
+            .ConfigureAwait(true);
+        if (result.State == DiscordConnectionState.Failed)
+        {
+            if (!string.IsNullOrWhiteSpace(result.PopupMessage))
+            {
+                ShowSocialMessage(result.PopupMessage);
+            }
+
+            return;
+        }
+
+        ApplyDiscordConnection(result);
+        await _dashboard.PersistSettingsAsync().ConfigureAwait(true);
+        if (result.State != DiscordConnectionState.Connected && !string.IsNullOrWhiteSpace(result.PopupMessage))
+        {
+            ShowSocialMessage(result.PopupMessage);
+        }
+    }
+
+    private async Task ConnectDiscordFromGuideAsync()
+    {
+        if (_isConnectingDiscord)
+        {
+            return;
+        }
+
+        _isConnectingDiscord = true;
+        try
+        {
+            ShowSocialMessage("Authorize DashX360 in your browser to connect Discord.");
+            var result = await _socialIntegrationManager.ConnectDiscordAsync().ConfigureAwait(true);
+            ApplyDiscordConnection(result);
+            await _dashboard.PersistSettingsAsync().ConfigureAwait(true);
+            if (result.State == DiscordConnectionState.Connected)
+            {
+                await RefreshAsync(showPopup: false).ConfigureAwait(true);
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.PopupMessage))
+            {
+                ShowSocialMessage(result.PopupMessage);
+            }
+        }
+        catch
+        {
+            ShowSocialMessage("Discord connection failed. Try again from the friends list.");
+        }
+        finally
+        {
+            _isConnectingDiscord = false;
+        }
+    }
+
+    private void ApplyDiscordConnection(SocialConnectionResult result)
+        => _dashboard.ApplyDiscordConnection(result);
 
     private void QueueFriendsSave()
         => _ = SaveFriendsAsync();
@@ -3455,6 +3863,7 @@ public sealed class GuideViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsPartyScreen));
         OnPropertyChanged(nameof(IsFriendSearchScreen));
         OnPropertyChanged(nameof(IsFriendProfileScreen));
+        OnPropertyChanged(nameof(IsFriendChatScreen));
         OnPropertyChanged(nameof(IsAchievementsScreen));
         OnPropertyChanged(nameof(IsFriendOverlayScreen));
         OnPropertyChanged(nameof(IsMediaTab));

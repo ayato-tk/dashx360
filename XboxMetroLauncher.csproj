@@ -3,8 +3,9 @@
     <AssemblyName>XboxMetroLauncher</AssemblyName>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>false</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
@@ -45,13 +46,12 @@
   <ItemGroup>
     <Content Include="Data\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <Content Include="obj\Debug\net10.0-windows\win-x64\UserData\discord-config.json" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="SharpDX.DirectInput" Version="4.2.0" />
+    <PackageReference Include="YellowDogMan.DiscordSocialSDK.Wrapper" Version="1.1.8166" />
   </ItemGroup>
 
   <Target Name="CopyLooseAssetsToPublishFolder" AfterTargets="Publish">

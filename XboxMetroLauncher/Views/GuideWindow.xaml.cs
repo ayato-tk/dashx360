@@ -69,6 +69,8 @@ public partial class GuideWindow : Window
         _viewModel = viewModel;
         DataContext = viewModel;
         _viewModel.PropertyChanged += ViewModel_OnPropertyChanged;
+        _viewModel.ChatMessages.CollectionChanged += (_, _) =>
+            Dispatcher.BeginInvoke(new Action(() => FriendChatScroll.ScrollToEnd()));
     }
 
     public bool Open()
@@ -117,6 +119,7 @@ public partial class GuideWindow : Window
         SetGuideBladeBounds(FriendsListOverlay);
         SetGuideBladeBounds(PartyOverlay);
         SetGuideBladeBounds(FriendProfileOverlay);
+        SetGuideBladeBounds(FriendChatOverlay);
 
         if (AchievementsOverlay.RowDefinitions.Count >= 2)
         {
@@ -137,6 +140,12 @@ public partial class GuideWindow : Window
         {
             FriendProfileOverlay.RowDefinitions[0].Height = new GridLength(40);
             FriendProfileOverlay.RowDefinitions[1].Height = new GridLength(526);
+        }
+
+        if (FriendChatOverlay.RowDefinitions.Count >= 2)
+        {
+            FriendChatOverlay.RowDefinitions[0].Height = new GridLength(40);
+            FriendChatOverlay.RowDefinitions[1].Height = new GridLength(526);
         }
     }
 
@@ -770,6 +779,13 @@ public partial class GuideWindow : Window
             Dispatcher.BeginInvoke(FocusGuideMenu);
         }
 
+        if (e.PropertyName == nameof(GuideViewModel.IsFriendChatScreen) && _viewModel.IsFriendChatScreen)
+        {
+            BeginOverlayOpenAnimation(FriendChatOverlay, FriendChatOverlayOffset, 16);
+            Dispatcher.BeginInvoke(new Action(() => FriendChatScroll.ScrollToEnd()));
+            Dispatcher.BeginInvoke(FocusGuideMenu);
+        }
+
         if (e.PropertyName == nameof(GuideViewModel.IsGuideMusicPickerScreen) && _viewModel.IsGuideMusicPickerScreen)
         {
             Dispatcher.BeginInvoke(FocusGuideMenu);
@@ -1003,6 +1019,14 @@ public partial class GuideWindow : Window
         GuideMenu.SelectedItem = item.DataContext;
         _viewModel.ActivateSelected();
         FocusGuideMenu();
+    }
+
+    private void FriendsList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ListBox { SelectedItem: not null } listBox)
+        {
+            listBox.ScrollIntoView(listBox.SelectedItem);
+        }
     }
 
     private void FriendsList_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)

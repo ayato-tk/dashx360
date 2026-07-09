@@ -27,7 +27,8 @@ public sealed class AudioService : IAudioService
         ["select"] = ["10. Select A.mp3", "13. Select.mp3", "select.wav"],
         ["activate"] = ["10. Select A.mp3", "13. Select.mp3", "select.wav"],
         ["back"] = ["14. Back.mp3", "15. Back 2.mp3", "back.wav"],
-        ["focus"] = ["13. Select.mp3", "11. Select A (Alt).mp3", "focus.wav"]
+        ["focus"] = ["13. Select.mp3", "11. Select A (Alt).mp3", "focus.wav"],
+        ["notify"] = ["12. Select B.mp3", "10. Select A.mp3", "select.wav"]
     };
 
     public AudioService(Func<bool> isEnabled, Panel? host = null)

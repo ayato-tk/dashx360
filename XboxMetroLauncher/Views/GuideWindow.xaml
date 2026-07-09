@@ -894,8 +894,9 @@
                                     BorderThickness="0"
                                     ItemContainerStyle="{StaticResource GuideFriendsRowStyle}"
                                     FocusVisualStyle="{x:Null}"
-                                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
                                     KeyboardNavigation.DirectionalNavigation="Contained"
+                                    SelectionChanged="FriendsList_OnSelectionChanged"
                                     MouseLeftButtonUp="FriendsList_OnMouseLeftButtonUp">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
@@ -1588,9 +1589,9 @@
                                     BorderThickness="0"
                                     ItemContainerStyle="{StaticResource GuideFriendsRowStyle}"
                                     FocusVisualStyle="{x:Null}"
-                                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                    PreviewMouseWheel="DisableMouseWheelScroll"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
                                     KeyboardNavigation.DirectionalNavigation="Contained"
+                                    SelectionChanged="FriendsList_OnSelectionChanged"
                                      MouseLeftButtonUp="FriendsList_OnMouseLeftButtonUp">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
@@ -2544,36 +2545,61 @@
                                                            FontSize="21"
                                                            Foreground="White" />
 
-                                                <Grid Grid.Row="1"
-                                                      Margin="0,14,0,0"
-                                                      HorizontalAlignment="Left"
-                                                      VerticalAlignment="Top">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="72" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Border Width="56"
-                                                            Height="56"
+                                                <StackPanel Grid.Row="1"
+                                                            Margin="0,14,0,0"
                                                             HorizontalAlignment="Left"
-                                                            VerticalAlignment="Top"
-                                                            Background="#EEF7F8F8"
-                                                            BorderBrush="#66FFFFFF"
-                                                            BorderThickness="1"
-                                                            ClipToBounds="True">
-                                                        <Image Source="{Binding ActiveFriendGameIconPath, Converter={StaticResource StringToImageSourceConverter}}"
-                                                               Stretch="UniformToFill" />
-                                                    </Border>
+                                                            VerticalAlignment="Top">
+                                                    <!-- Profile badges take the primary spot (no more blank game-icon square). -->
+                                                    <ItemsControl ItemsSource="{Binding ActiveFriendBadges}"
+                                                                  Visibility="{Binding HasActiveFriendBadges, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel MaxWidth="420" HorizontalAlignment="Left" />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Image Source="{Binding IconUrl, Converter={StaticResource StringToImageSourceConverter}, ConverterParameter=80}"
+                                                                       Width="40"
+                                                                       Height="40"
+                                                                       Margin="0,0,11,11"
+                                                                       Stretch="Uniform"
+                                                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                                                       ToolTip="{Binding Name}" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
 
-                                                    <TextBlock Grid.Column="1"
-                                                               Text="{Binding ActiveFriendGameTitle}"
-                                                               Width="300"
-                                                               Margin="0,4,0,0"
-                                                               Foreground="White"
-                                                               FontSize="21"
-                                                               TextWrapping="Wrap"
-                                                               TextTrimming="CharacterEllipsis" />
-                                                </Grid>
+                                                    <!-- Game icon + title only when the friend is actually playing something. -->
+                                                    <Grid Visibility="{Binding ActiveFriendGameTitle, Converter={StaticResource EmptyToVisibilityConverter}}">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="72" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <Border Width="56"
+                                                                Height="56"
+                                                                HorizontalAlignment="Left"
+                                                                VerticalAlignment="Top"
+                                                                Background="#EEF7F8F8"
+                                                                BorderBrush="#66FFFFFF"
+                                                                BorderThickness="1"
+                                                                ClipToBounds="True"
+                                                                Visibility="{Binding ActiveFriendGameIconPath, Converter={StaticResource EmptyToVisibilityConverter}}">
+                                                            <Image Source="{Binding ActiveFriendGameIconPath, Converter={StaticResource StringToImageSourceConverter}}"
+                                                                   Stretch="UniformToFill" />
+                                                        </Border>
+
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding ActiveFriendGameTitle}"
+                                                                   Width="300"
+                                                                   Margin="0,4,0,0"
+                                                                   Foreground="White"
+                                                                   FontSize="21"
+                                                                   TextWrapping="Wrap"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </Grid>
+                                                </StackPanel>
 
                                                 <TextBlock Grid.Row="2"
                                                            Text="{Binding ActiveFriendStatus}"
@@ -2603,6 +2629,125 @@
                                     Style="{StaticResource GuideOverlayFooterStyle}"
                                     Visibility="{Binding IsMainGuideScreen, Converter={StaticResource BooleanToVisibilityConverter}}" />
             </Grid>
+
+                <Rectangle Canvas.Left="0"
+                           Canvas.Top="0"
+                           Width="1280"
+                           Height="720"
+                           Fill="#76000000"
+                           IsHitTestVisible="False"
+                           Visibility="{Binding IsFriendChatScreen, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                <Grid x:Name="FriendChatOverlay"
+                      Canvas.Left="210"
+                      Canvas.Top="50"
+                      Width="860"
+                      Height="606"
+                      Opacity="0"
+                      Visibility="{Binding IsFriendChatScreen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid.RenderTransform>
+                        <TranslateTransform x:Name="FriendChatOverlayOffset" X="0" />
+                    </Grid.RenderTransform>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="526" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="16,0,16,0">
+                        <TextBlock Text="{Binding ChatHeaderText}"
+                                   Foreground="White"
+                                   FontSize="22"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ClockText}"
+                                   Foreground="White"
+                                   FontSize="20"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                    <Border Grid.Row="1"
+                            Background="#F1E8ECEE"
+                            BorderBrush="#FF949EA3"
+                            BorderThickness="1">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="22"
+                                              ShadowDepth="0"
+                                              Color="#FF000000"
+                                              Opacity="0.5" />
+                        </Border.Effect>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="46" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="36" />
+                            </Grid.RowDefinitions>
+
+                            <Border Background="#FFAAAEB1" BorderBrush="#D8E4E7E8" BorderThickness="1">
+                                <TextBlock Text="{Binding ChatHeaderText}"
+                                           Margin="16,0,0,0"
+                                           VerticalAlignment="Center"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="White" />
+                            </Border>
+
+                            <ScrollViewer x:Name="FriendChatScroll"
+                                          Grid.Row="1"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          PanningMode="VerticalOnly">
+                                <Grid>
+                                    <ItemsControl ItemsSource="{Binding ChatMessages}" Margin="6,8,6,8">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="14,5">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock x:Name="ChatAuthor"
+                                                                   Text="{Binding AuthorName}"
+                                                                   FontSize="13"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="#FF3F484D" />
+                                                        <TextBlock Text="{Binding TimeText}"
+                                                                   FontSize="12"
+                                                                   Foreground="#FF7C868C"
+                                                                   Margin="8,1,0,0" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Content}"
+                                                               FontSize="15"
+                                                               Foreground="#FF2B3134"
+                                                               TextWrapping="Wrap"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOwn}" Value="True">
+                                                        <Setter TargetName="ChatAuthor" Property="Foreground" Value="#FF0E7A0E" />
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="No messages yet this session. Older Discord history is not available here — press A to write something!"
+                                               Foreground="#FF6B757B"
+                                               FontSize="15"
+                                               TextWrapping="Wrap"
+                                               Margin="24,20,24,0"
+                                               Visibility="{Binding IsChatEmpty, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                </Grid>
+                            </ScrollViewer>
+
+                            <Border Grid.Row="2"
+                                    Background="#FFF1F4F5"
+                                    BorderBrush="#FFC7CFD2"
+                                    BorderThickness="0,1,0,0">
+                                <TextBlock Text="Press A to write a message  •  Messages are also visible on Discord"
+                                           Margin="16,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF525B61"
+                                           FontSize="12.5" />
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <ContentControl Grid.Row="2" Style="{StaticResource GuideOverlayFooterStyle}" />
+                </Grid>
 
                 <Grid x:Name="GuideMusicOverlay"
                       Canvas.Left="0"

@@ -16,6 +16,8 @@ public sealed class SocialConnectionResult
 
     public string AccessToken { get; init; } = string.Empty;
 
+    public string RefreshToken { get; init; } = string.Empty;
+
     public string GrantedScopes { get; init; } = string.Empty;
 
     public string TokenTypeName { get; init; } = string.Empty;

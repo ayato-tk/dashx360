@@ -9,6 +9,7 @@ public sealed class AppSettings : ObservableObject
     private bool _enableControllerInput = true;
     private bool _launchOnWindowsStartup;
     private bool _minimizeOnGameLaunch = true;
+    private bool _skipBootAnimation;
     private string _themeName = "Xbox 360";
     private string _bingSearchBaseUrl = "https://www.bing.com/search?q=";
     private string _displayResolution = "1080p";
@@ -21,6 +22,7 @@ public sealed class AppSettings : ObservableObject
     private string _discordDisplayName = string.Empty;
     private string _discordAvatarPathOrUrl = string.Empty;
     private string _discordAccessTokenEncrypted = string.Empty;
+    private string _discordRefreshTokenEncrypted = string.Empty;
     private string _discordGrantedScopes = string.Empty;
     private string _discordTokenType = string.Empty;
 
@@ -52,6 +54,12 @@ public sealed class AppSettings : ObservableObject
     {
         get => _minimizeOnGameLaunch;
         set => SetProperty(ref _minimizeOnGameLaunch, value);
+    }
+
+    public bool SkipBootAnimation
+    {
+        get => _skipBootAnimation;
+        set => SetProperty(ref _skipBootAnimation, value);
     }
 
     public string ThemeName
@@ -130,6 +138,12 @@ public sealed class AppSettings : ObservableObject
     {
         get => _discordAccessTokenEncrypted;
         set => SetProperty(ref _discordAccessTokenEncrypted, value);
+    }
+
+    public string DiscordRefreshTokenEncrypted
+    {
+        get => _discordRefreshTokenEncrypted;
+        set => SetProperty(ref _discordRefreshTokenEncrypted, value);
     }
 
     public string DiscordGrantedScopes
